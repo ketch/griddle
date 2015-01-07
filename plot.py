@@ -75,13 +75,13 @@ def plot_item(gridded_data,field,plot_obj=None,axes=None,**plotargs):
     Returns the handle to the plot object (e.g., line).
     """
     num_dim = gridded_data.num_dim
-    coords = gridded_data.grid.p_centers
-    x = coords[0]
+    centers = gridded_data.grid.p_centers
 
     if num_dim == 1:
+        xc = centers[0]
         plot_type = 'line'
     elif num_dim == 2:
-        y = coords[1]
+        xe, ye = gridded_data.grid.p_edges
         plot_type = 'pcolor'
 
 
@@ -94,13 +94,13 @@ def plot_item(gridded_data,field,plot_obj=None,axes=None,**plotargs):
 
     if plot_obj is not None:
         if plot_type == 'line':
-            plot_obj.set_data(x,q)
-        elif plot_type == 'pcolor':
-            plot_obj.set_data(q.T)
+            plot_obj.set_data(xc,q)
+            # Rescale axes automatically
+            plot_obj.axes.relim()
+            plot_obj.axes.autoscale_view(True,True,True)
 
-        # Rescale axes automatically
-        plot_obj.axes.relim()
-        plot_obj.axes.autoscale_view(True,True,True)
+        elif plot_type == 'pcolor':
+            plot_obj.set_array(q.ravel())
 
         return plot_obj,
 
@@ -109,14 +109,12 @@ def plot_item(gridded_data,field,plot_obj=None,axes=None,**plotargs):
         axes = figure.add_subplot(111)
 
     if plot_type == 'line':
-        plot_obj = axes.plot(x,q,**plotargs)
+        plot_obj = axes.plot(xc,q,**plotargs)[0]
     elif plot_type == 'pcolor':
-        plot_obj = axes.imshow(q.T, cmap='Greys', vmin=q.min(), vmax=q.max(),
-                           extent=[x.min(), x.max(), y.min(), y.max()],
-                           interpolation='nearest', origin='lower')
-        plot_obj = [plot_obj] # Hacky
+        plot_obj = axes.pcolormesh(xe, ye, q)
+        axes.axis('image')
 
-    return plot_obj
+    return plot_obj,
 
 
 def animate(plot_spec):
