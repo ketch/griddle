@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from clawpack import pyclaw
 import numpy as np
 
+# ===================================
+# Setup functions
 def set_up_solution():
     x = pyclaw.Dimension(0.,1.,100)
     g = pyclaw.geometry.Patch([x])
@@ -21,7 +23,10 @@ def run_clawpack():
     claw = examples.acoustics_1d_homogeneous.acoustics_1d.setup()
     claw.run()
     return claw
+# ===================================
 
+# ===================================
+# Test functions
 def test_plot_item():
     sol = set_up_solution()
     line, = griddle.plot_item(sol,0)
@@ -64,3 +69,4 @@ def test_gallery():
     plot_spec = [item1, item2]
     griddle.write_plots(plot_spec)
     griddle.make_plot_gallery()
+# ===================================

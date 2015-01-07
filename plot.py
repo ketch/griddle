@@ -3,26 +3,11 @@ griddle.plot: plotting time-series data on structured grids.
 """
 import matplotlib.pyplot as plt
 
-def _valid_plot_spec(plot_spec):
-    r"""Check that a plot_spec argument is valid.
-
-    A plot_spec should be a list of dictionaries.
-    """
-    for item in plot_spec:
-        if not type(item) is dict:
-            raise Exception('Each plot_spec entry should be a dictionary.')
-        if not item.has_key('data'):
-            raise Exception('Data source not specified.')
-        if not hasattr(item['data'],'__getitem__'):
-            raise Exception('Data source should be a list.')
-    return True
-
-def get_figures(plot_objects):
-    figures_with_dupes = [plot_object.figure for plot_object in plot_objects]
-    figures = list(set(figures_with_dupes)) # Discard duplicates
-    return figures
-
 def write_plots(plot_spec):
+    r"""
+    Write image files to disk.  Multiple figures are written to different
+    subdirectories.
+    """
     path = './_plots/'
     print path
     import os
@@ -31,7 +16,7 @@ def write_plots(plot_spec):
     for i in range(len(plot_spec[0]['data'])):
         plot_objects = plot_frame(plot_spec,i)
 
-        figures = get_figures(plot_objects)
+        figures = _get_figures(plot_objects)
         for figure in figures:
             subdir = 'fig%s/' % str(figure.number)
             if not os.path.exists(path+subdir):
@@ -41,8 +26,7 @@ def write_plots(plot_spec):
 
 def plot_frame(plot_spec,frame_num=0):
     r"""
-    Plot a list of items.  Optionally, use a provided list of figures to place
-    the plots on.
+    Plot a list of items, specified in plot_spec, using `frame[frame_num]`.
     """
     assert _valid_plot_spec(plot_spec)
 
@@ -69,15 +53,16 @@ def plot_frame(plot_spec,frame_num=0):
 def plot_item(gridded_data,field,plot_obj=None,axes=None,**plotargs):
     r"""
     Plot a single item (typically one field of one gridded_data) on a specified
-    axis.  If plot_obj is specified, it simply updates the data
-    on that object.  Note that this will not cause the plot to refresh.
+    axis.  If plot_obj is specified, it simply updates the data on that object.
+    Note that this will not cause the plot to refresh.
+
+    Inputs:
+        - gridded_data : a PyClaw Solution object
+        - field : an integer or a function.  If an integer, plot
+            gridded_data.q[i,...].  If a function, it should accept
+            gridded_data as an argument and return a computed field.
 
     Returns the handle to the plot object (e.g., line).
-
-    In principle, field could be:
-    - an index
-    - a numpy array
-    - a name (string) that lives in a dictionary that is part of gridded_data
     """
     x = gridded_data.grid.p_centers[0]
     if type(field) is int:
@@ -108,29 +93,32 @@ def plot_item(gridded_data,field,plot_obj=None,axes=None,**plotargs):
 def animate(plot_spec):
     """
     Create an animation widget in an IPython notebook.
+    Note that only the figure corresponding to the first item
+    in plot_spec will be animated; the rest will be ignored.
 
-        plot_spec[i]['data'] may be:
+    plot_spec[i]['data'] may be:
 
-            - a list of Solution objects
-            - a controller possessing a list of Solution objects
+        - a list of Solution objects
+        - a controller possessing a list of Solution objects
     """
-    import matplotlib.pyplot as plt
     from matplotlib import animation
     from clawpack.visclaw.JSAnimation import IPython_display
-    from clawpack import pyclaw
-    import numpy as np
-    import griddle
 
-    plot_objects = griddle.plot_frame(plot_spec)
+    plot_objects = plot_frame(plot_spec)
     fig = plot_objects[0].figure
 
     def fplot(frame_number):
-        plot_objects = griddle.plot_frame(plot_spec,frame_number)
+        plot_objects = plot_frame(plot_spec,frame_number)
         return plot_objects[0]
 
     return animation.FuncAnimation(fig, fplot, frames=len(plot_spec[0]['data']))
 
+
 def make_plot_gallery(plot_path='./_plots'):
+    """
+    Make a pretty static HTML gallery of plots.  A sub-gallery is created for
+    each subdirectory of `plot_path`.
+    """
     from sigal.gallery import Gallery
     from sigal.settings import _DEFAULT_CONFIG
     import os
@@ -146,5 +134,30 @@ def make_plot_gallery(plot_path='./_plots'):
     gal = Gallery(settings)
     gal.build()
     print 'Open your browser to ./_build/index.html'
+
+
+def _get_figures(plot_objects):
+    """
+    Given a list of `plot_objects`, return a list of figures containing them
+    (without duplicates).
+    """
+    figures_with_dupes = [plot_object.figure for plot_object in plot_objects]
+    figures = list(set(figures_with_dupes)) # Discard duplicates
+    return figures
+
+
+def _valid_plot_spec(plot_spec):
+    r"""Check that a plot_spec argument is valid.
+
+    A plot_spec should be a list of dictionaries.
+    """
+    for item in plot_spec:
+        if not type(item) is dict:
+            raise Exception('Each plot_spec entry should be a dictionary.')
+        if not item.has_key('data'):
+            raise Exception('Data source not specified.')
+        if not hasattr(item['data'],'__getitem__'):
+            raise Exception('Data source should be a list.')
+    return True
 
 
