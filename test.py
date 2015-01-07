@@ -1,5 +1,6 @@
-import structviz
+import griddle
 import matplotlib
+import matplotlib.pyplot as plt
 from clawpack import pyclaw
 import numpy as np
 
@@ -23,17 +24,25 @@ def run_clawpack():
 
 def test_plot_item():
     sol = set_up_solution()
-    line, = structviz.plot_item(sol,0)
+    line, = griddle.plot_item(sol,0)
     assert type(line) == matplotlib.lines.Line2D
     assert line.get_data()[0].shape == (100,)
 
 def test_animation():
-    pass
+    claw = run_clawpack()
+    fig1 = plt.figure()
+    ax1 = fig1.add_subplot(211)
+    ax2 = fig1.add_subplot(212)
+    item1 = {'field' : 0,
+             'axes' : ax1,
+             'plotargs' : {'ls' : '--', 'color' : 'green'}}
+    item2 = {'field' : 1, 'axes' : ax2}
+    plotitems = [item1,item2]
+    animation = griddle.ianimate(claw,plotitems)
 
 def test_iplot():
-    import matplotlib.pyplot as plt
     claw = run_clawpack()
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
-    plot_items = [{'field' : 0, 'axes' : ax1}]
-    ip = structviz.Iplotsol(claw.frames,plot_items)
+    plot_spec = [{'field' : 0, 'axes' : ax1}]
+    ip = griddle.Iplotsol(claw.frames,plot_spec)

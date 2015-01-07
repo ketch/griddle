@@ -95,8 +95,12 @@ class Iplot(cmd.Cmd):
             try:
                 frame = self.load_frame(self.frameno)
                 self.frames[str(frameno)] = frame
-                plot_items = self.plot_frame(frame)
-                plot_items[0]['plot_obj'].figure.canvas.draw()
+                plot_objects = self.plot_frame(frame)
+
+                figures = [obj.figure for obj in plot_objects]
+                figures = list(set(figures)) # Discard duplicates
+                for figure in figures:
+                    figure.canvas.draw()
             except IOError:
                 print "Swallowing IOError to avoid crashing in interactive mode."
  
@@ -359,19 +363,19 @@ class Iplot(cmd.Cmd):
 
 
 class Iplotsol(Iplot):
-    def __init__(self, solutions, plot_items, \
+    def __init__(self, gridded_data_series, plot_spec, \
                  completekey='tab', stdin=None, stdout=None):
         
-        self._solutions = solutions
-        self.plot_items = plot_items
+        self._gridded_data_series = gridded_data_series
+        self.plot_spec = plot_spec
         Iplot.__init__(self,self.load_frame,self.plot_frame, \
                 completekey, stdin, stdout)
 
     def load_frame(self,frameno):
-        return self._solutions[frameno]
+        return self._gridded_data_series[frameno]
 
     def plot_frame(self,frame):
-        import structviz
-        plot_items = structviz.plot_frame(frame,self.plot_items)
-        return plot_items
+        import griddle
+        plot_objects = griddle.plot_frame(frame,self.plot_spec)
+        return plot_objects
  

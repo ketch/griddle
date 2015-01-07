@@ -1,33 +1,37 @@
 r"""
-StructViz: plotting time-series data on structured grids.
+Griddle: plotting time-series data on structured grids.
 """
 import matplotlib.pyplot as plt
 
-def plot_frame(solution,plot_items):
+def plot_frame(gridded_data,plot_spec):
     r"""
-    Plot a list of items based on data in solution.  Optionally, use a
+    Plot a list of items based on data in gridded_data.  Optionally, use a
     provided list of figures to place the plots on.
     """
     # Fill in default values of None
-    for item in plot_items:
+    for item in plot_spec:
         for attr in ['plot_obj','axes']:
             item[attr] = item.get(attr)
         if not item.has_key('plotargs'):
             item['plotargs'] = {}
 
-    for item in plot_items:
-        item['plot_obj'], = \
-                plot_item(solution,item['field'],item['plot_obj'],item['axes'],**item['plotargs'])
+    plot_objects = []
+
+    for item in plot_spec:
+        plot_obj, = \
+                plot_item(gridded_data,item['field'],item['plot_obj'],item['axes'],**item['plotargs'])
+        item['plot_obj'] = plot_obj
+        plot_objects.append(plot_obj)
 
     #figures = [item['plot_obj'].figure for item in plot_items]
     #figures = list(set(figures)) # Discard duplicates
 
-    return plot_items
+    return plot_objects
 
 
-def plot_item(solution,field,plot_obj=None,axes=None,**plotargs):
+def plot_item(gridded_data,field,plot_obj=None,axes=None,**plotargs):
     r"""
-    Plot a single item (typically one field of one solution) on a specified
+    Plot a single item (typically one field of one gridded_data) on a specified
     axis.  If plot_obj is specified, it simply updates the data
     on that object.  Note that this will not cause the plot to refresh.
 
@@ -36,13 +40,13 @@ def plot_item(solution,field,plot_obj=None,axes=None,**plotargs):
     In principle, field could be:
     - an index
     - a numpy array
-    - a name (string) that lives in a dictionary that is part of solution
+    - a name (string) that lives in a dictionary that is part of gridded_data
     """
-    x = solution.grid.p_centers[0]
+    x = gridded_data.grid.p_centers[0]
     if type(field) is int:
-        q = solution.state.q[field,...]
+        q = gridded_data.state.q[field,...]
     elif hasattr(field, '__call__'):
-        q = field(solution)
+        q = field(gridded_data)
     else:
         raise Exception('Unrecognized field argument in plot_item: ', field)
 

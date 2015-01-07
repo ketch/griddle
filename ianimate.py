@@ -3,9 +3,9 @@ Interactive animations in IPython notebooks using matplotlib and JSAnimation.
 """
 
 
-def ianimate(solutions,plot_items,ivar=0,varname=None,**kargs):
+def ianimate(gridded_data_series,plot_spec,ivar=0,varname=None,**kargs):
     """
-        solutions may be:
+        gridded_data_series may be:
 
             - a list of Solution objects
             - a controller possessing a list of Solution objects
@@ -15,18 +15,18 @@ def ianimate(solutions,plot_items,ivar=0,varname=None,**kargs):
     from clawpack.visclaw.JSAnimation import IPython_display
     from clawpack import pyclaw
     import numpy as np
-    import structviz
+    import griddle
 
-    if isinstance(solutions,pyclaw.Controller):
-        solutions = solutions.frames
+    if isinstance(gridded_data_series,pyclaw.Controller):
+        gridded_data_series = gridded_data_series.frames
 
-    frame = solutions[0]
-    plot_items = structviz.plot_frame(frame,plot_items)
-    fig = plot_items[0]['plot_obj'].figure
+    frame = gridded_data_series[0]
+    plot_objects = griddle.plot_frame(frame,plot_spec)
+    fig = plot_objects[0].figure
 
     def fplot(frame_number):
-        frame = solutions[frame_number]
-        structviz.plot_frame(frame,plot_items)
-        return plot_items[0]['plot_obj']
+        frame = gridded_data_series[frame_number]
+        griddle.plot_frame(frame,plot_spec)
+        return plot_objects[0]
 
-    return animation.FuncAnimation(fig, fplot, frames=len(solutions))
+    return animation.FuncAnimation(fig, fplot, frames=len(gridded_data_series))
