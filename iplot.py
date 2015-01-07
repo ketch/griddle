@@ -376,6 +376,6 @@ class Iplotsol(Iplot):
 
     def plot_frame(self,frame):
         import griddle
-        plot_objects = griddle.plot_frame(frame,self.plot_spec)
+        plot_objects = griddle.plot_frame(self.plot_spec)
         return plot_objects
  

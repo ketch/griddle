@@ -3,7 +3,7 @@ Interactive animations in IPython notebooks using matplotlib and JSAnimation.
 """
 
 
-def ianimate(gridded_data_series,plot_spec,ivar=0,varname=None,**kargs):
+def ianimate(plot_spec):
     """
         gridded_data_series may be:
 
@@ -17,16 +17,11 @@ def ianimate(gridded_data_series,plot_spec,ivar=0,varname=None,**kargs):
     import numpy as np
     import griddle
 
-    if isinstance(gridded_data_series,pyclaw.Controller):
-        gridded_data_series = gridded_data_series.frames
-
-    frame = gridded_data_series[0]
-    plot_objects = griddle.plot_frame(frame,plot_spec)
+    plot_objects = griddle.plot_frame(plot_spec)
     fig = plot_objects[0].figure
 
     def fplot(frame_number):
-        frame = gridded_data_series[frame_number]
-        griddle.plot_frame(frame,plot_spec)
+        plot_objects = griddle.plot_frame(plot_spec,frame_number)
         return plot_objects[0]
 
-    return animation.FuncAnimation(fig, fplot, frames=len(gridded_data_series))
+    return animation.FuncAnimation(fig, fplot, frames=len(plot_spec[0]['data']))

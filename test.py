@@ -33,16 +33,21 @@ def test_animation():
     fig1 = plt.figure()
     ax1 = fig1.add_subplot(211)
     ax2 = fig1.add_subplot(212)
-    item1 = {'field' : 0,
+    item1 = {'data' : claw.frames,
+             'field' : 0,
              'axes' : ax1,
              'plotargs' : {'ls' : '--', 'color' : 'green'}}
-    item2 = {'field' : 1, 'axes' : ax2}
+    item2 = {'data' : claw.frames, 'field' : 1, 'axes' : ax2}
     plotitems = [item1,item2]
-    animation = griddle.ianimate(claw,plotitems)
+    animation = griddle.ianimate(plotitems)
 
 def test_iplot():
     claw = run_clawpack()
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
-    plot_spec = [{'field' : 0, 'axes' : ax1}]
+    plot_spec = [{'data' : claw.frames, 'field' : 0, 'axes' : ax1}]
     ip = griddle.Iplotsol(claw.frames,plot_spec)
+
+def test_gallery():
+    claw = run_clawpack()
+    griddle.make_plot_gallery()
