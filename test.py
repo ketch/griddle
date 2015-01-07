@@ -17,10 +17,15 @@ def set_up_solution():
     sol = pyclaw.Solution(s,d)
     return sol
 
-def run_clawpack():
+def run_pyclaw_1d():
     from clawpack.pyclaw import examples
     claw = examples.acoustics_1d_homogeneous.acoustics_1d.setup()
-    claw = examples.acoustics_1d_homogeneous.acoustics_1d.setup()
+    claw.run()
+    return claw
+
+def run_pyclaw_2d():
+    from clawpack.pyclaw import examples
+    claw = examples.radial_dam_break.setup()
     claw.run()
     return claw
 # ===================================
@@ -34,7 +39,7 @@ def test_plot_item():
     assert line.get_data()[0].shape == (100,)
 
 def test_animation():
-    claw = run_clawpack()
+    claw = run_pyclaw_1d()
     fig1 = plt.figure()
     ax1 = fig1.add_subplot(211)
     ax2 = fig1.add_subplot(212)
@@ -47,14 +52,14 @@ def test_animation():
     animation = griddle.animate(plotitems)
 
 def test_iplot():
-    claw = run_clawpack()
+    claw = run_pyclaw_1d()
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
     plot_spec = [{'data' : claw.frames, 'field' : 0, 'axes' : ax1}]
     ip = griddle.Iplotsol(claw.frames,plot_spec)
 
 def test_gallery():
-    claw = run_clawpack()
+    claw = run_pyclaw_1d()
     fig1 = plt.figure()
     fig2 = plt.figure()
     ax1 = fig1.add_subplot(111)
@@ -69,4 +74,16 @@ def test_gallery():
     plot_spec = [item1, item2]
     griddle.write_plots(plot_spec)
     griddle.make_plot_gallery()
+
+def test_imshow():
+    claw = run_pyclaw_2d()
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    plot_spec = [{'data' : claw.frames,
+                  'field' : 0}]
+    plot_object = griddle.plot_frame(plot_spec)
+    assert type(plot_object[0]) is matplotlib.image.AxesImage
+
+def test_read_data():
+    pass
 # ===================================

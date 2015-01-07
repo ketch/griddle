@@ -2,6 +2,7 @@ r"""
 griddle.plot: plotting time-series data on structured grids.
 """
 import matplotlib.pyplot as plt
+from clawpack import pyclaw
 
 def write_plots(plot_spec):
     r"""
@@ -9,7 +10,6 @@ def write_plots(plot_spec):
     subdirectories.
     """
     path = './_plots/'
-    print path
     import os
     if not os.path.exists(path):
         os.mkdir(path)
@@ -40,7 +40,17 @@ def plot_frame(plot_spec,frame_num=0):
     plot_objects = []
 
     for item in plot_spec:
+        # Add data field if necessary
+        if not item.has_key('data'):
+            item['data'] = [None]*_get_num_data_files(item['data_path'])
+
         gridded_data = item['data'][frame_num]
+
+        # Load data from file if necessary
+        if gridded_data is None:
+            gridded_data = pyclaw.Solution(frame_num,path=item['data_path'])
+
+
         plot_obj, = plot_item(gridded_data, \
                               item['field'],item['plot_obj'], \
                               item['axes'],**item['plotargs'])
@@ -64,7 +74,17 @@ def plot_item(gridded_data,field,plot_obj=None,axes=None,**plotargs):
 
     Returns the handle to the plot object (e.g., line).
     """
-    x = gridded_data.grid.p_centers[0]
+    num_dim = gridded_data.num_dim
+    coords = gridded_data.grid.p_centers
+    x = coords[0]
+
+    if num_dim == 1:
+        plot_type = 'line'
+    elif num_dim == 2:
+        y = coords[1]
+        plot_type = 'pcolor'
+
+
     if type(field) is int:
         q = gridded_data.state.q[field,...]
     elif hasattr(field, '__call__'):
@@ -73,7 +93,10 @@ def plot_item(gridded_data,field,plot_obj=None,axes=None,**plotargs):
         raise Exception('Unrecognized field argument in plot_item: ', field)
 
     if plot_obj is not None:
-        plot_obj.set_data(x,q)
+        if plot_type == 'line':
+            plot_obj.set_data(x,q)
+        elif plot_type == 'pcolor':
+            plot_obj.set_data(q.T)
 
         # Rescale axes automatically
         plot_obj.axes.relim()
@@ -85,10 +108,16 @@ def plot_item(gridded_data,field,plot_obj=None,axes=None,**plotargs):
         figure = plt.figure()
         axes = figure.add_subplot(111)
 
-    if plotargs is not None:
-        return axes.plot(x,q,**plotargs)
-    else:
-        return axes.plot(x,q)
+    if plot_type == 'line':
+        plot_obj = axes.plot(x,q,**plotargs)
+    elif plot_type == 'pcolor':
+        plot_obj = axes.imshow(q.T, cmap='Greys', vmin=q.min(), vmax=q.max(),
+                           extent=[x.min(), x.max(), y.min(), y.max()],
+                           interpolation='nearest', origin='lower')
+        plot_obj = [plot_obj] # Hacky
+
+    return plot_obj
+
 
 def animate(plot_spec):
     """
@@ -154,10 +183,16 @@ def _valid_plot_spec(plot_spec):
     for item in plot_spec:
         if not type(item) is dict:
             raise Exception('Each plot_spec entry should be a dictionary.')
-        if not item.has_key('data'):
-            raise Exception('Data source not specified.')
-        if not hasattr(item['data'],'__getitem__'):
-            raise Exception('Data source should be a list.')
+        if not item.has_key('data_path'):
+            if not item.has_key('data'):
+                raise Exception('Data source not specified.')
+            if not hasattr(item['data'],'__getitem__'):
+                raise Exception('Data source should be a list or relative path string.')
     return True
 
-
+def _get_num_data_files(path,file_string='fort.q'):
+    r"""Count the number of output files in directory specified by path."""
+    import os
+    files = os.listdir(path)
+    data_files = [file_string in filename for filename in files]
+    return data_files.count(True)
