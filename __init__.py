@@ -1,3 +1,2 @@
-from plot_frame import plot_item, plot_frame, write_plots, make_plot_gallery
-from ianimate import ianimate
+from plot import plot_item, plot_frame, write_plots, make_plot_gallery, animate
 from iplot import Iplotsol

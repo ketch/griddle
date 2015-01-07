@@ -39,7 +39,7 @@ def test_animation():
              'plotargs' : {'ls' : '--', 'color' : 'green'}}
     item2 = {'data' : claw.frames, 'field' : 1, 'axes' : ax2}
     plotitems = [item1,item2]
-    animation = griddle.ianimate(plotitems)
+    animation = griddle.animate(plotitems)
 
 def test_iplot():
     claw = run_clawpack()
@@ -50,4 +50,17 @@ def test_iplot():
 
 def test_gallery():
     claw = run_clawpack()
+    fig1 = plt.figure()
+    fig2 = plt.figure()
+    ax1 = fig1.add_subplot(111)
+    ax2 = fig2.add_subplot(111)
+    item1 = {'data' : claw.frames,
+             'field' : 0,
+             'axes' : ax1,
+             'plotargs' : {'ls' : '--', 'color' : 'green'}}
+    item2 = {'data' : claw.frames,
+             'field' : 1,
+             'axes' : ax2}
+    plot_spec = [item1, item2]
+    griddle.write_plots(plot_spec)
     griddle.make_plot_gallery()

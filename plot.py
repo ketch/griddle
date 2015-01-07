@@ -1,9 +1,9 @@
 r"""
-Griddle: plotting time-series data on structured grids.
+griddle.plot: plotting time-series data on structured grids.
 """
 import matplotlib.pyplot as plt
 
-def valid_plot_spec(plot_spec):
+def _valid_plot_spec(plot_spec):
     r"""Check that a plot_spec argument is valid.
 
     A plot_spec should be a list of dictionaries.
@@ -33,27 +33,18 @@ def write_plots(plot_spec):
 
         figures = get_figures(plot_objects)
         for figure in figures:
-            filename = 'frame%sfig%s.png' % (str(i).zfill(4), str(figure.number))
-            figure.savefig(path+filename)
-
-def make_plot_gallery(plot_path='./_plots'):
-    from sigal.gallery import Gallery
-    from sigal.settings import _DEFAULT_CONFIG
-
-    settings = _DEFAULT_CONFIG
-    settings['source'] = plot_path
-    settings['index_in_url'] = True
-    settings['use_orig'] = True
-    gal = Gallery(settings)
-    gal.build()
-    print 'Open your browser to ./_build/index.html'
+            subdir = 'fig%s/' % str(figure.number)
+            if not os.path.exists(path+subdir):
+                os.mkdir(path+subdir)
+            filename = 'frame%s.png' % str(i).zfill(4)
+            figure.savefig(path+subdir+filename)
 
 def plot_frame(plot_spec,frame_num=0):
     r"""
     Plot a list of items.  Optionally, use a provided list of figures to place
     the plots on.
     """
-    assert valid_plot_spec(plot_spec)
+    assert _valid_plot_spec(plot_spec)
 
     # Fill in default values of None
     for item in plot_spec:
@@ -113,4 +104,47 @@ def plot_item(gridded_data,field,plot_obj=None,axes=None,**plotargs):
         return axes.plot(x,q,**plotargs)
     else:
         return axes.plot(x,q)
+
+def animate(plot_spec):
+    """
+    Create an animation widget in an IPython notebook.
+
+        plot_spec[i]['data'] may be:
+
+            - a list of Solution objects
+            - a controller possessing a list of Solution objects
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib import animation
+    from clawpack.visclaw.JSAnimation import IPython_display
+    from clawpack import pyclaw
+    import numpy as np
+    import griddle
+
+    plot_objects = griddle.plot_frame(plot_spec)
+    fig = plot_objects[0].figure
+
+    def fplot(frame_number):
+        plot_objects = griddle.plot_frame(plot_spec,frame_number)
+        return plot_objects[0]
+
+    return animation.FuncAnimation(fig, fplot, frames=len(plot_spec[0]['data']))
+
+def make_plot_gallery(plot_path='./_plots'):
+    from sigal.gallery import Gallery
+    from sigal.settings import _DEFAULT_CONFIG
+    import os
+
+    if not os.path.exists(plot_path):
+        raise Exception('plot_path does not exist: %s' % plot_path)
+
+    settings = _DEFAULT_CONFIG
+    settings['source'] = plot_path
+    settings['index_in_url'] = True
+    settings['use_orig'] = True
+    settings['title'] = 'Plots'
+    gal = Gallery(settings)
+    gal.build()
+    print 'Open your browser to ./_build/index.html'
+
 
