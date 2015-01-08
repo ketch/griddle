@@ -1,0 +1,93 @@
+Clawpack Git Status 
+Diffs can be found in claw_git_diffs.txt
+
+Tue Mar 18 20:57:57 AST 2014
+$CLAW = /Users/ketch/Research/Software/clawpack 
+
+$FC not set
+
+
+===========
+classic
+===========
+/Users/ketch/Research/Software/clawpack/classic
+
+--- last commit ---
+9e96ac7 Merge pull request #60 from rjleveque/fix_flux2_rpcalls
+
+--- branch and status ---
+## master
+
+
+===========
+amrclaw
+===========
+/Users/ketch/Research/Software/clawpack/amrclaw
+
+--- last commit ---
+915919d Merge pull request #98 from rjleveque/setaux_calls
+
+--- branch and status ---
+## master
+ M examples/advection_3d_swirl/setrun.py
+
+
+===========
+clawutil
+===========
+/Users/ketch/Research/Software/clawpack/clawutil
+
+--- last commit ---
+fd343fe Merge pull request #73 from mandli/replace-rundata-object
+
+--- branch and status ---
+## master
+
+
+===========
+pyclaw
+===========
+/Users/ketch/Research/Software/clawpack/pyclaw
+
+--- last commit ---
+1fb6aa1 Merge pull request #370 from hadjimy/linear_multistep_methods
+
+--- branch and status ---
+## master
+ M src/pyclaw/log.config
+
+
+===========
+visclaw
+===========
+/Users/ketch/Research/Software/clawpack/visclaw
+
+--- last commit ---
+b3c6f0d Merge branch 'refactor_frametools' of github.com:ketch/visclaw into refactor_frametools
+
+--- branch and status ---
+## refactor_frametools...ketch/refactor_frametools [ahead 2]
+
+
+===========
+riemann
+===========
+/Users/ketch/Research/Software/clawpack/riemann
+
+--- last commit ---
+866c348 Merge pull request #66 from ketch/euler_3d_values
+
+--- branch and status ---
+## master
+
+
+===========
+geoclaw
+===========
+/Users/ketch/Research/Software/clawpack/geoclaw
+
+--- last commit ---
+697d720 Merge pull request #67 from clawpack/new_dtopo
+
+--- branch and status ---
+## master

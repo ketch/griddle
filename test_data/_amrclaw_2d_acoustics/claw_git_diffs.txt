@@ -1,0 +1,61 @@
+Clawpack git diffs...
+
+===========
+classic
+===========
+
+
+===========
+amrclaw
+===========
+diff --git a/examples/advection_3d_swirl/setrun.py b/examples/advection_3d_swirl/setrun.py
+index b9554c7..a22a5fb 100644
+--- a/examples/advection_3d_swirl/setrun.py
++++ b/examples/advection_3d_swirl/setrun.py
+@@ -132,7 +132,7 @@ def setrun(claw_pkg='amrclaw'):
+         clawdata.output_t0 = True  # output at initial (or restart) time?
+ 
+ 
+-    clawdata.output_format = 'ascii'       # 'ascii', 'binary', 'netcdf'
++    clawdata.output_format = 'netcdf'       # 'ascii', 'binary', 'netcdf'
+ 
+     clawdata.output_q_components = 'all'    # only 'all'
+     clawdata.output_aux_components = 'none'  # 'all' or 'none'
+
+
+===========
+clawutil
+===========
+
+
+===========
+pyclaw
+===========
+diff --git a/src/pyclaw/log.config b/src/pyclaw/log.config
+index 9b5e395..f5613ce 100644
+--- a/src/pyclaw/log.config
++++ b/src/pyclaw/log.config
+@@ -22,7 +22,7 @@ keys=default,detailed
+ #  Logger settings
+ #
+ [logger_root]
+-level=INFO                             
++level=CRITICAL                             
+ handlers=file,console
+ 
+ [logger_io]
+
+
+===========
+visclaw
+===========
+
+
+===========
+riemann
+===========
+
+
+===========
+geoclaw
+===========
