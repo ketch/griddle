@@ -3,6 +3,8 @@ griddle.plot: plotting time-series data on multi-patch structured mapped grids.
 """
 import matplotlib.pyplot as plt
 from clawpack import pyclaw
+import os
+import numpy as np
 
 
 def plot_frame(plot_spec,frame_num=0):
@@ -16,6 +18,12 @@ def plot_frame(plot_spec,frame_num=0):
     assert _valid_plot_spec(plot_spec)
 
     for item in plot_spec:
+        # Add data field if necessary
+        if not item.has_key('data'):
+            item['data_format'] = item.get('data_format')
+            if item['data_format'] is None:
+                item['data_format'] = _get_data_format(item['data_path'])
+            item['data'] = [None]*_get_num_data_files(item['data_path'],item['data_format'])
         # Fill in default values of None to avoid KeyErrors later
         for attr in ['plot_objects','axes']:
             item[attr] = item.get(attr)
@@ -25,28 +33,37 @@ def plot_frame(plot_spec,frame_num=0):
 
     all_plot_objects = []
 
+
     for item in plot_spec:
-        # Add data field if necessary
-        if not item.has_key('data'):
-            item['data'] = [None]*_get_num_data_files(item['data_path'])
-
-
 
         # Load data from file if necessary
         if item['data'][frame_num] is None:
-            item['data'][frame_num] = pyclaw.Solution(frame_num,path=item['data_path'])
+            item['data'][frame_num] = pyclaw.Solution(frame_num, \
+                                          path=item['data_path'],
+                                          file_format=item['data_format'])
+
+        num_dim = item['data'][frame_num].state.num_dim
+        if num_dim == 1:
+            item['plot_type'] = 'line'
+        elif num_dim == 2:
+            item['plot_type'] = 'pcolor'
+        elif num_dim == 3:
+            item['plot_type'] = 'yt_slice'
+
 
         plot_objects = plot_item(item['data'][frame_num],item['field'], \
-                              item['axes'],**item['plotargs'])
+                                 item['plot_type'],item['axes'], \
+                                 item['plot_objects'],**item['plotargs'])
 
         item['plot_objects'] = plot_objects
-        item['axes'] = plot_objects[0].axes
+        if 'yt' not in item['plot_type']:
+            item['axes'] = plot_objects[0].axes
         all_plot_objects.append(plot_objects)
 
     return all_plot_objects
 
 
-def plot_item(gridded_data,field,axes=None,**plotargs):
+def plot_item(gridded_data,field,plot_type,axes=None,plot_objects=None,**plotargs):
     r"""
     Plot a single item (typically one field of one gridded_data) on a specified
     axes.
@@ -60,9 +77,10 @@ def plot_item(gridded_data,field,axes=None,**plotargs):
 
     Returns a list of handles to the plot objects (e.g., line) on each patch.
     """
-    num_dim = gridded_data.state.num_dim
-
-    plot_objects = [None]*len(gridded_data.states)
+    if (len(gridded_data.states) > 1) and ('yt' not in plot_type): # Multi-patch plot
+        plot_objects = [None]*len(gridded_data.states)
+    elif plot_objects is None:
+        plot_objects = [None]
 
     patch_values = []
     for state in gridded_data.states:
@@ -75,13 +93,22 @@ def plot_item(gridded_data,field,axes=None,**plotargs):
         patch_values.append(q)
 
 
-    if num_dim == 1:
-        plot_type = 'line'
-    elif num_dim == 2:
-        plot_type = 'pcolor'
+    if plot_type == 'pcolor':
         # Get color range
         zmin = min([v.min() for v in patch_values])
         zmax = max([v.max() for v in patch_values])
+
+    if plot_type == 'yt_slice':
+        import yt
+        ds = _solution_to_yt_ds(gridded_data)
+        if plot_objects[0] is None:
+            slc = yt.SlicePlot(ds, 'z', "Density",origin="native",center=[1., 0., 0.]);
+            slc.set_log('Density',False);
+            #return [slc.plots.values()[0]]
+            return [slc]
+        else:
+            plot_objects[0]._switch_ds(ds)
+            return plot_objects
 
     if axes is None:
         figure = plt.figure()
@@ -106,7 +133,6 @@ def write_plots(plot_spec,path='./_plots/'):
     Write image files to disk.  Multiple figures are written to different
     subdirectories.
     """
-    import os
     if not os.path.exists(path):
         os.mkdir(path)
     for i in range(len(plot_spec[0]['data'])):
@@ -136,7 +162,11 @@ def animate(plot_spec):
     from clawpack.visclaw.JSAnimation import IPython_display
 
     plot_objects = plot_frame(plot_spec)
-    fig = plot_objects[0][0].figure
+    import yt
+    if type(plot_objects[0][0])==yt.visualization.plot_window.AxisAlignedSlicePlot:
+        fig = plot_objects[0][0].plots['Density'].figure
+    else:
+        fig = plot_objects[0][0].figure
 
     def fplot(frame_number):
         plot_objects = plot_frame(plot_spec,frame_number)
@@ -152,7 +182,6 @@ def make_plot_gallery(plot_path='./_plots'):
     """
     from sigal.gallery import Gallery
     from sigal.settings import _DEFAULT_CONFIG
-    import os
 
     if not os.path.exists(plot_path):
         raise Exception('plot_path does not exist: %s' % plot_path)
@@ -194,12 +223,28 @@ def _valid_plot_spec(plot_spec):
                 raise Exception('Data source should be a list or relative path string.')
     return True
 
-def _get_num_data_files(path,file_string='fort.q'):
-    r"""Count the number of output files in directory specified by path."""
-    import os
+def _get_num_data_files(path,file_format):
+    r"""Count the number of output files of type file_format in directory specified by path."""
     files = os.listdir(path)
+    file_string = file_substrings[file_format]
     data_files = [file_string in filename for filename in files]
     return data_files.count(True)
+
+def _get_data_format(path):
+    r"""Figure out which file format to read."""
+    files = os.listdir(path)
+    file_types_present = []
+    for file_type, string in file_substrings.iteritems():
+        if any([string in filename for filename in files]):
+            file_types_present.append(file_type)
+
+    if len(file_types_present)==1:
+        return file_types_present[0]
+    else:
+        return raw_input("""Multiple file types are present in the specified
+                        data directory.  Which do you wish to use?
+                        """+file_types_present)
+
 
 def _clear_axes(item):
         # Clear old items from plot axes
@@ -210,3 +255,34 @@ def _clear_axes(item):
         #        del plot_object
         if item['axes'] is not None:
             item['axes'].cla()
+
+
+def _solution_to_yt_ds(sol):
+    import yt
+
+    grid_data = []
+
+    for state in sorted(sol.states, key = lambda a: a.patch.level):
+        patch = state.patch
+
+        d = {
+            'left_edge': patch.lower_global,
+            'right_edge': patch.upper_global,
+            'level': patch.level,
+            'dimensions': patch.num_cells_global,
+            'Density': state.q[0,...],
+            'x-momentum' : state.q[1,:,:,:],
+            'y-momentum' : state.q[2,:,:,:],
+            'z-momentum' : state.q[3,:,:,:],
+            'Energy'     : state.q[4,:,:,:]
+            }
+        grid_data.append(d)
+        bbox = np.vstack((sol.patch.lower_global,sol.patch.upper_global)).T;
+    return yt.load_amr_grids(grid_data, sol.patch.num_cells_global, bbox = bbox)
+
+
+file_substrings = { #should be 'extensions'
+        'ascii' : 'fort.q',
+        'hdf5'  : 'hdf',
+        'petsc' : 'ptc'
+        }

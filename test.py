@@ -34,7 +34,7 @@ def run_pyclaw_2d():
 # Test functions
 def test_plot_item():
     sol = set_up_solution()
-    line, = griddle.plot_item(sol,0)
+    line, = griddle.plot_item(sol,0,'line')
     assert type(line) == matplotlib.lines.Line2D
     assert line.get_data()[0].shape == (100,)
 
@@ -97,4 +97,10 @@ def test_amr_plotting():
     plot_objects = griddle.plot_frame(plot_spec,frame_num=5);
     assert len(plot_objects[0]) == 20
     assert type(plot_objects[0][0]) is matplotlib.collections.QuadMesh
+
+def test_yt_slice_plot():
+    import yt
+    plot_spec = [{'data_path' : './test_data/_pyclaw_3d_shocktube', 'field' : 0}]
+    plot_objects = griddle.plot_frame(plot_spec)
+    assert type(plot_objects[0][0]) is yt.visualization.plot_window.AxisAlignedSlicePlot
 # ===================================
