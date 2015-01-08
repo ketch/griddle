@@ -1,43 +1,27 @@
 r"""
-griddle.plot: plotting time-series data on structured grids.
+griddle.plot: plotting time-series data on multi-patch structured mapped grids.
 """
 import matplotlib.pyplot as plt
 from clawpack import pyclaw
 
-def write_plots(plot_spec):
-    r"""
-    Write image files to disk.  Multiple figures are written to different
-    subdirectories.
-    """
-    path = './_plots/'
-    import os
-    if not os.path.exists(path):
-        os.mkdir(path)
-    for i in range(len(plot_spec[0]['data'])):
-        plot_objects = plot_frame(plot_spec,i)
-
-        figures = _get_figures(plot_objects)
-        for figure in figures:
-            subdir = 'fig%s/' % str(figure.number)
-            if not os.path.exists(path+subdir):
-                os.mkdir(path+subdir)
-            filename = 'frame%s.png' % str(i).zfill(4)
-            figure.savefig(path+subdir+filename)
 
 def plot_frame(plot_spec,frame_num=0):
     r"""
     Plot a list of items, specified in plot_spec, using `frame[frame_num]`.
+
+    Returns: `all_plot_objects`, a list of lists of plot objects.
+    `all_plot_objects[i][j]` is a handle to the plot object for item
+    `plot_spec[i]` on patch j.
     """
     assert _valid_plot_spec(plot_spec)
 
-    # Fill in default values of None
     for item in plot_spec:
-        for attr in ['plot_obj','axes']:
+        # Fill in default values of None to avoid KeyErrors later
+        for attr in ['plot_objects','axes']:
             item[attr] = item.get(attr)
         if not item.has_key('plotargs'):
             item['plotargs'] = {}
-        if item['axes'] is not None:
-            item['axes'].cla()
+        _clear_axes(item)
 
     all_plot_objects = []
 
@@ -46,28 +30,26 @@ def plot_frame(plot_spec,frame_num=0):
         if not item.has_key('data'):
             item['data'] = [None]*_get_num_data_files(item['data_path'])
 
-        gridded_data = item['data'][frame_num]
+
 
         # Load data from file if necessary
-        if gridded_data is None:
-            gridded_data = pyclaw.Solution(frame_num,path=item['data_path'])
+        if item['data'][frame_num] is None:
+            item['data'][frame_num] = pyclaw.Solution(frame_num,path=item['data_path'])
 
-
-        plot_objects = plot_item(gridded_data, \
-                              item['field'],item['plot_obj'], \
+        plot_objects = plot_item(item['data'][frame_num],item['field'], \
                               item['axes'],**item['plotargs'])
-        #item['plot_obj'] = plot_obj
+
+        item['plot_objects'] = plot_objects
         item['axes'] = plot_objects[0].axes
         all_plot_objects.append(plot_objects)
 
     return all_plot_objects
 
 
-def plot_item(gridded_data,field,plot_objects=None,axes=None,**plotargs):
+def plot_item(gridded_data,field,axes=None,**plotargs):
     r"""
     Plot a single item (typically one field of one gridded_data) on a specified
-    axis.  If plot_obj is specified, it simply updates the data on that object.
-    Note that this will not cause the plot to refresh.
+    axes.
 
     Inputs:
         - gridded_data : a PyClaw Solution object
@@ -76,12 +58,11 @@ def plot_item(gridded_data,field,plot_objects=None,axes=None,**plotargs):
             function, it should accept a state as an argument and return a
             computed field.
 
-    Returns the handle to the plot object (e.g., line).
+    Returns a list of handles to the plot objects (e.g., line) on each patch.
     """
     num_dim = gridded_data.state.num_dim
 
-    if plot_objects is None:
-        plot_objects = [None]*len(gridded_data.states)
+    plot_objects = [None]*len(gridded_data.states)
 
     patch_values = []
     for state in gridded_data.states:
@@ -119,6 +100,25 @@ def plot_item(gridded_data,field,plot_objects=None,axes=None,**plotargs):
             axes.axis('image')
 
     return plot_objects
+
+def write_plots(plot_spec,path='./_plots/'):
+    r"""
+    Write image files to disk.  Multiple figures are written to different
+    subdirectories.
+    """
+    import os
+    if not os.path.exists(path):
+        os.mkdir(path)
+    for i in range(len(plot_spec[0]['data'])):
+        plot_objects = plot_frame(plot_spec,i)
+
+        figures = _get_figures(plot_objects)
+        for figure in figures:
+            subdir = 'fig%s/' % str(figure.number)
+            if not os.path.exists(path+subdir):
+                os.mkdir(path+subdir)
+            filename = 'frame%s.png' % str(i).zfill(4)
+            figure.savefig(path+subdir+filename)
 
 
 def animate(plot_spec):
@@ -200,3 +200,13 @@ def _get_num_data_files(path,file_string='fort.q'):
     files = os.listdir(path)
     data_files = [file_string in filename for filename in files]
     return data_files.count(True)
+
+def _clear_axes(item):
+        # Clear old items from plot axes
+        # This doesn't work correctly:
+        #if item['plot_objects'] is not None:
+        #    for plot_object in item['plot_objects']:
+        #        plot_object.remove()
+        #        del plot_object
+        if item['axes'] is not None:
+            item['axes'].cla()
