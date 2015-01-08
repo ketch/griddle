@@ -36,8 +36,10 @@ def plot_frame(plot_spec,frame_num=0):
             item[attr] = item.get(attr)
         if not item.has_key('plotargs'):
             item['plotargs'] = {}
+        if item['axes'] is not None:
+            item['axes'].cla()
 
-    plot_objects = []
+    all_plot_objects = []
 
     for item in plot_spec:
         # Add data field if necessary
@@ -51,16 +53,17 @@ def plot_frame(plot_spec,frame_num=0):
             gridded_data = pyclaw.Solution(frame_num,path=item['data_path'])
 
 
-        plot_obj, = plot_item(gridded_data, \
+        plot_objects = plot_item(gridded_data, \
                               item['field'],item['plot_obj'], \
                               item['axes'],**item['plotargs'])
-        item['plot_obj'] = plot_obj
-        plot_objects.append(plot_obj)
+        #item['plot_obj'] = plot_obj
+        item['axes'] = plot_objects[0].axes
+        all_plot_objects.append(plot_objects)
 
-    return plot_objects
+    return all_plot_objects
 
 
-def plot_item(gridded_data,field,plot_obj=None,axes=None,**plotargs):
+def plot_item(gridded_data,field,plot_objects=None,axes=None,**plotargs):
     r"""
     Plot a single item (typically one field of one gridded_data) on a specified
     axis.  If plot_obj is specified, it simply updates the data on that object.
@@ -69,52 +72,53 @@ def plot_item(gridded_data,field,plot_obj=None,axes=None,**plotargs):
     Inputs:
         - gridded_data : a PyClaw Solution object
         - field : an integer or a function.  If an integer, plot
-            gridded_data.q[i,...].  If a function, it should accept
-            gridded_data as an argument and return a computed field.
+            state.q[i,...] for each state in gridded_data.states.  If a
+            function, it should accept a state as an argument and return a
+            computed field.
 
     Returns the handle to the plot object (e.g., line).
     """
-    num_dim = gridded_data.num_dim
-    centers = gridded_data.grid.p_centers
+    num_dim = gridded_data.state.num_dim
+
+    if plot_objects is None:
+        plot_objects = [None]*len(gridded_data.states)
+
+    patch_values = []
+    for state in gridded_data.states:
+        if type(field) is int:
+            q = state.q[field,...]
+        elif hasattr(field, '__call__'):
+            q = field(state)
+        else:
+            raise Exception('Unrecognized field argument in plot_item: ', field)
+        patch_values.append(q)
+
 
     if num_dim == 1:
-        xc = centers[0]
         plot_type = 'line'
     elif num_dim == 2:
-        xe, ye = gridded_data.grid.p_edges
         plot_type = 'pcolor'
-
-
-    if type(field) is int:
-        q = gridded_data.state.q[field,...]
-    elif hasattr(field, '__call__'):
-        q = field(gridded_data)
-    else:
-        raise Exception('Unrecognized field argument in plot_item: ', field)
-
-    if plot_obj is not None:
-        if plot_type == 'line':
-            plot_obj.set_data(xc,q)
-            # Rescale axes automatically
-            plot_obj.axes.relim()
-            plot_obj.axes.autoscale_view(True,True,True)
-
-        elif plot_type == 'pcolor':
-            plot_obj.set_array(q.ravel())
-
-        return plot_obj,
+        # Get color range
+        zmin = min([v.min() for v in patch_values])
+        zmax = max([v.max() for v in patch_values])
 
     if axes is None:
         figure = plt.figure()
         axes = figure.add_subplot(111)
 
-    if plot_type == 'line':
-        plot_obj = axes.plot(xc,q,**plotargs)[0]
-    elif plot_type == 'pcolor':
-        plot_obj = axes.pcolormesh(xe, ye, q)
-        axes.axis('image')
+    for i,state in enumerate(gridded_data.states):
+        centers = state.grid.p_centers
+        q = patch_values[i]
 
-    return plot_obj,
+        if plot_type == 'line':
+            xc = centers[0]
+            plot_objects[i] = axes.plot(xc,q,**plotargs)[0]
+        elif plot_type == 'pcolor':
+            xe, ye = state.grid.p_edges
+            plot_objects[i] = axes.pcolormesh(xe, ye, q, vmin=zmin, vmax=zmax, shading='flat')
+            axes.axis('image')
+
+    return plot_objects
 
 
 def animate(plot_spec):
@@ -132,7 +136,7 @@ def animate(plot_spec):
     from clawpack.visclaw.JSAnimation import IPython_display
 
     plot_objects = plot_frame(plot_spec)
-    fig = plot_objects[0].figure
+    fig = plot_objects[0][0].figure
 
     def fplot(frame_number):
         plot_objects = plot_frame(plot_spec,frame_number)
@@ -163,12 +167,14 @@ def make_plot_gallery(plot_path='./_plots'):
     print 'Open your browser to ./_build/index.html'
 
 
-def _get_figures(plot_objects):
+def _get_figures(plot_object_list_list):
     """
-    Given a list of `plot_objects`, return a list of figures containing them
+    Given a list of lists of `plot_objects`, return a list of figures containing them
     (without duplicates).
     """
-    figures_with_dupes = [plot_object.figure for plot_object in plot_objects]
+    figures_with_dupes = []
+    for plot_object_list in plot_object_list_list:
+        figures_with_dupes.extend([plot_object.figure for plot_object in plot_object_list])
     figures = list(set(figures_with_dupes)) # Discard duplicates
     return figures
 

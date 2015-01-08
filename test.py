@@ -82,8 +82,19 @@ def test_pcolor():
     plot_spec = [{'data' : claw.frames,
                   'field' : 0}]
     plot_object = griddle.plot_frame(plot_spec)
-    assert type(plot_object[0]) is matplotlib.collections.QuadMesh
+    assert type(plot_object[0][0]) is matplotlib.collections.QuadMesh
 
 def test_read_data():
     pass
+
+def test_amr_plotting():
+    fig = plt.figure(figsize=(10,10))
+    ax = fig.add_subplot(111)
+    item5 = {'data_path' : './test_data/_amrclaw_2d_acoustics/',
+             'field' : 0,
+             'axes' : ax}
+    plot_spec = [item5]
+    plot_objects = griddle.plot_frame(plot_spec,frame_num=5);
+    assert len(plot_objects[0]) == 20
+    assert type(plot_objects[0][0]) is matplotlib.collections.QuadMesh
 # ===================================
