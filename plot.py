@@ -51,6 +51,7 @@ def plot_frame(plot_spec,frame_num=0):
             item['axes'] = plot_objects[0].plots[item['field']].axes
         else:
             item['axes'] = plot_objects[0].axes
+        item['axes'].set(**item['axargs'])
         _set_axis_title(item,frame_num)
         all_plot_objects.append(plot_objects)
 
@@ -84,7 +85,7 @@ def plot_item(gridded_data,field,plot_type,axes=None,plot_objects=None,**plotarg
     # yt plotting
     # ===============
     if plot_type == 'yt_slice':
-        import yt
+        import yt.SlicePlot
         if plot_objects[0] is None:
             slc = yt.SlicePlot(ds, fields=field, **plotargs)
             slc.set_log(field,False);
@@ -165,7 +166,7 @@ def animate(plot_spec):
     from clawpack.visclaw.JSAnimation import IPython_display
 
     plot_objects = plot_frame(plot_spec)
-    import yt
+    import yt.visualization
     if type(plot_objects[0][0])==yt.visualization.plot_window.AxisAlignedSlicePlot:
         fig = plot_objects[0][0].plots['Density'].figure
     else:
@@ -274,6 +275,8 @@ def _set_plot_item_defaults(item,frame_num):
             item[attr] = item.get(attr)
         if not item.has_key('plotargs'):
             item['plotargs'] = {}
+        if not item.has_key('axargs'):
+            item['axargs'] = {}
 
 
 def _clear_axes(item):
@@ -292,7 +295,7 @@ def _set_axis_title(item,frame_num):
 
 def _solution_to_yt_ds(sol):
     r"""Convert pyclaw.Solution to yt.dataset."""
-    import yt
+    import yt.load_amr_grids
     grid_data = []
 
     for state in sorted(sol.states, key = lambda a: a.patch.level):

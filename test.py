@@ -99,7 +99,7 @@ def test_amr_plotting():
     assert type(plot_objects[0][0]) is matplotlib.collections.QuadMesh
 
 def test_yt_slice_plot():
-    import yt
+    import yt.visualization
     plot_spec = [{'data_path' : './test_data/_pyclaw_3d_shocktube',
                   'field' : 'Density',
                   'plotargs' : {'normal' : 'z',
