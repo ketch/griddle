@@ -28,3 +28,11 @@ The user must provide a `plot_spec`, which is a list of Python dictionaries.
 Each dict must specify a dataset (a list of `Solution` objects, or a path to a
 directory containing Solution files), as well as what and how to plot from that
 dataset.
+
+`griddle.plot` is largely an adaptation of `clawpack.visclaw`.
+Some of the key differences are:
+
+- visclaw uses a hierarchical plot specification: figures->axes->items, whereas
+  griddle uses a flat list of items, each of which can be associated with a
+  particular set of axes by the user
+- griddle currently allows plotting with yt as well as matplotlib

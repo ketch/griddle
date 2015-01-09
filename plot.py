@@ -17,24 +17,14 @@ def plot_frame(plot_spec,frame_num=0):
     """
     assert _valid_plot_spec(plot_spec)
 
+    # Sanitize items and prepare for plotting
     for item in plot_spec:
-        # Add data field if necessary
+        # Add data field if necessary; this only happens once for a time series
         if not item.has_key('data'):
             item['data_format'] = item.get('data_format')
             if item['data_format'] is None:
                 item['data_format'] = _get_data_format(item['data_path'])
             item['data'] = [None]*_get_num_data_files(item['data_path'],item['data_format'])
-        # Fill in default values of None to avoid KeyErrors later
-        for attr in ['plot_objects','axes']:
-            item[attr] = item.get(attr)
-        if not item.has_key('plotargs'):
-            item['plotargs'] = {}
-        _clear_axes(item)
-
-    all_plot_objects = []
-
-
-    for item in plot_spec:
 
         # Load data from file if necessary
         if item['data'][frame_num] is None:
@@ -50,6 +40,19 @@ def plot_frame(plot_spec,frame_num=0):
         elif num_dim == 3:
             item['plot_type'] = 'yt_slice'
 
+
+        # Fill in default values of None to avoid KeyErrors later
+        for attr in ['plot_objects','axes']:
+            item[attr] = item.get(attr)
+        if not item.has_key('plotargs'):
+            item['plotargs'] = {}
+        _clear_axes(item)
+
+    all_plot_objects = []
+
+
+    # Now do the actual plots
+    for item in plot_spec:
 
         plot_objects = plot_item(item['data'][frame_num],item['field'], \
                                  item['plot_type'],item['axes'], \
@@ -69,7 +72,7 @@ def plot_item(gridded_data,field,plot_type,axes=None,plot_objects=None,**plotarg
     axes.
 
     Inputs:
-        - gridded_data : a PyClaw Solution object
+        - gridded_data : a PyClaw Solution object or a yt dataset
         - field : an integer or a function.  If an integer, plot
             state.q[i,...] for each state in gridded_data.states.  If a
             function, it should accept a state as an argument and return a
@@ -77,11 +80,32 @@ def plot_item(gridded_data,field,plot_type,axes=None,plot_objects=None,**plotarg
 
     Returns a list of handles to the plot objects (e.g., line) on each patch.
     """
-    if (len(gridded_data.states) > 1) and ('yt' not in plot_type): # Multi-patch plot
+    if 'yt' in plot_type:
+        # For yt plots, convert to yt.dataset
+        ds = _solution_to_yt_ds(gridded_data)
+        if plot_objects is None: # yt plots are always a single object
+            plot_objects = [None]
+    else:
+        # For matplotlib plots, replace instead of updating in-place
         plot_objects = [None]*len(gridded_data.states)
-    elif plot_objects is None:
-        plot_objects = [None]
 
+    # ===============
+    # yt plotting
+    # ===============
+    if plot_type == 'yt_slice':
+        import yt
+        if plot_objects[0] is None:
+            slc = yt.SlicePlot(ds, fields=field, **plotargs)
+            slc.set_log('Density',False);
+            #return [slc.plots.values()[0]]
+            return [slc]
+        else:
+            plot_objects[0]._switch_ds(ds)
+            return plot_objects
+
+    # ===============
+    # non-yt plotting
+    # ===============
     patch_values = []
     for state in gridded_data.states:
         if type(field) is int:
@@ -97,18 +121,6 @@ def plot_item(gridded_data,field,plot_type,axes=None,plot_objects=None,**plotarg
         # Get color range
         zmin = min([v.min() for v in patch_values])
         zmax = max([v.max() for v in patch_values])
-
-    if plot_type == 'yt_slice':
-        import yt
-        ds = _solution_to_yt_ds(gridded_data)
-        if plot_objects[0] is None:
-            slc = yt.SlicePlot(ds, 'z', "Density",origin="native",center=[1., 0., 0.]);
-            slc.set_log('Density',False);
-            #return [slc.plots.values()[0]]
-            return [slc]
-        else:
-            plot_objects[0]._switch_ds(ds)
-            return plot_objects
 
     if axes is None:
         figure = plt.figure()
@@ -258,8 +270,8 @@ def _clear_axes(item):
 
 
 def _solution_to_yt_ds(sol):
+    r"""Convert pyclaw.Solution to yt.dataset."""
     import yt
-
     grid_data = []
 
     for state in sorted(sol.states, key = lambda a: a.patch.level):

@@ -100,7 +100,11 @@ def test_amr_plotting():
 
 def test_yt_slice_plot():
     import yt
-    plot_spec = [{'data_path' : './test_data/_pyclaw_3d_shocktube', 'field' : 0}]
+    plot_spec = [{'data_path' : './test_data/_pyclaw_3d_shocktube',
+                  'field' : 'Density',
+                  'plotargs' : {'normal' : 'z',
+                                'origin'  : "native",
+                                'center' : [1., 0.25, 0.]}}]
     plot_objects = griddle.plot_frame(plot_spec)
     assert type(plot_objects[0][0]) is yt.visualization.plot_window.AxisAlignedSlicePlot
 # ===================================
