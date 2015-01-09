@@ -32,20 +32,7 @@ def plot_frame(plot_spec,frame_num=0):
                                           path=item['data_path'],
                                           file_format=item['data_format'])
 
-        num_dim = item['data'][frame_num].state.num_dim
-        if num_dim == 1:
-            item['plot_type'] = 'line'
-        elif num_dim == 2:
-            item['plot_type'] = 'pcolor'
-        elif num_dim == 3:
-            item['plot_type'] = 'yt_slice'
-
-
-        # Fill in default values of None to avoid KeyErrors later
-        for attr in ['plot_objects','axes']:
-            item[attr] = item.get(attr)
-        if not item.has_key('plotargs'):
-            item['plotargs'] = {}
+        _set_plot_item_defaults(item,frame_num)
         _clear_axes(item)
 
     all_plot_objects = []
@@ -200,9 +187,12 @@ def make_plot_gallery(plot_path='./_plots'):
 
     settings = _DEFAULT_CONFIG
     settings['source'] = plot_path
+    settings['theme'] = 'colorbox'
     settings['index_in_url'] = True
     settings['use_orig'] = True
     settings['title'] = 'Plots'
+    settings['links'] = [('griddle on Github', 'http://github.com/ketch/griddle'),
+                         ('Clawpack', 'http://clawpack.github.io')]
     gal = Gallery(settings)
     gal.build()
     print 'Open your browser to ./_build/index.html'
@@ -236,14 +226,20 @@ def _valid_plot_spec(plot_spec):
     return True
 
 def _get_num_data_files(path,file_format):
-    r"""Count the number of output files of type file_format in directory specified by path."""
+    r"""Count the number of output files of type file_format in directory
+        specified by path.
+    """
     files = os.listdir(path)
     file_string = file_substrings[file_format]
     data_files = [file_string in filename for filename in files]
     return data_files.count(True)
 
 def _get_data_format(path):
-    r"""Figure out which file format to read."""
+    r"""Figure out which file format to read.
+
+        Check which of the known file types are present in directory specified
+        by `path`.  If multiple types are present, ask user which to use.
+    """
     files = os.listdir(path)
     file_types_present = []
     for file_type, string in file_substrings.iteritems():
@@ -256,6 +252,24 @@ def _get_data_format(path):
         return raw_input("""Multiple file types are present in the specified
                         data directory.  Which do you wish to use?
                         """+file_types_present)
+
+def _set_plot_item_defaults(item,frame_num):
+    r"""Choose reasonable defaults for required options that are not specified.
+    """
+    if not hasattr(item,'plot_type'):
+        num_dim = item['data'][frame_num].state.num_dim
+        if num_dim == 1:
+            item['plot_type'] = 'line'
+        elif num_dim == 2:
+            item['plot_type'] = 'pcolor'
+        elif num_dim == 3:
+            item['plot_type'] = 'yt_slice'
+
+        # Fill in default values of None to avoid KeyErrors later
+        for attr in ['plot_objects','axes']:
+            item[attr] = item.get(attr)
+        if not item.has_key('plotargs'):
+            item['plotargs'] = {}
 
 
 def _clear_axes(item):
