@@ -42,23 +42,26 @@ def plot_frame(plot_spec,frame_num=0):
     # Now do the actual plots
     for item in plot_spec:
 
-        plot_objects = plot_item(item['data'][frame_num],item['field'], \
-                                 item['plot_type'],item['axes'], \
-                                 item['plot_objects'],**item['plotargs'])
+        plot_objects = plot_item(item,frame_num)
 
         item['plot_objects'] = plot_objects
         if 'yt' in item['plot_type']:
             item['axes'] = plot_objects[0].plots[item['field']].axes
         else:
             item['axes'] = plot_objects[0].axes
-        item['axes'].set(**item['axargs'])
+        item['axes'].set(**item['axis_settings'])
         _set_axis_title(item,frame_num)
+        item['axes'].figure.set_tight_layout(True)
+
+        if item['plot_type'] in ['pcolor'] and not item.has_key('colorbar'):
+            item['colorbar'] = item['axes'].figure.colorbar(plot_objects[0])
+
         all_plot_objects.append(plot_objects)
 
     return all_plot_objects
 
 
-def plot_item(gridded_data,field,plot_type,axes=None,plot_objects=None,**plotargs):
+def plot_item(item,frame_num):
     r"""
     Plot a single item (typically one field of one gridded_data) on a specified
     axes.
@@ -72,6 +75,13 @@ def plot_item(gridded_data,field,plot_type,axes=None,plot_objects=None,**plotarg
 
     Returns a list of handles to the plot objects (e.g., line) on each patch.
     """
+    gridded_data = item['data'][frame_num]
+    field = item['field']
+    plot_type = item['plot_type']
+    axes = item.get('axes')
+    plot_objects = item.get('plot_objects')
+    plot_args = item.get('plot_args',{})
+
     if 'yt' in plot_type:
         # For yt plots, convert to yt.dataset
         ds = _solution_to_yt_ds(gridded_data)
@@ -85,9 +95,9 @@ def plot_item(gridded_data,field,plot_type,axes=None,plot_objects=None,**plotarg
     # yt plotting
     # ===============
     if plot_type == 'yt_slice':
-        import yt.SlicePlot
+        import yt
         if plot_objects[0] is None:
-            slc = yt.SlicePlot(ds, fields=field, **plotargs)
+            slc = yt.SlicePlot(ds, fields=field, **plot_args)
             slc.set_log(field,False);
             #return [slc.plots.values()[0]]
             return [slc]
@@ -100,14 +110,8 @@ def plot_item(gridded_data,field,plot_type,axes=None,plot_objects=None,**plotarg
     # ===============
     patch_values = []
     for state in gridded_data.states:
-        if type(field) is int:
-            q = state.q[field,...]
-        elif hasattr(field, '__call__'):
-            q = field(state)
-        else:
-            raise Exception('Unrecognized field argument in plot_item: ', field)
+        q = _get_patch_values(state,field)
         patch_values.append(q)
-
 
     if plot_type == 'pcolor':
         # Get color range
@@ -124,19 +128,30 @@ def plot_item(gridded_data,field,plot_type,axes=None,plot_objects=None,**plotarg
 
         if plot_type == 'line':
             xc = centers[0]
-            plot_objects[i] = axes.plot(xc,q,**plotargs)[0]
+            plot_objects[i] = axes.plot(xc,q,**plot_args)[0]
+        elif plot_type == 'fill_between':
+            xc = centers[0]
+            plot_objects[i] = axes.fill_between(xc,q[0],q[1],**plot_args)
         elif plot_type == 'pcolor':
             xe, ye = state.grid.p_edges
-            plot_objects[i] = axes.pcolormesh(xe, ye, q, vmin=zmin, vmax=zmax, shading='flat')
+            plot_objects[i] = axes.pcolormesh(xe, ye, q, vmin=zmin, vmax=zmax, \
+                                              shading='flat', **plot_args)
+            if item.get('show_patch_boundaries'):
+                axes.plot(xe[0,:],ye[0,:],'-k',lw=2,zorder=100)
+                axes.plot(xe[-1,:],ye[-1,:],'-k',lw=2,zorder=100)
+                axes.plot(xe[:,0],ye[:,0],'-k',lw=2,zorder=100)
+                axes.plot(xe[:,-1],ye[:,-1],'-k',lw=2,zorder=100)
+
             axes.axis('image')
 
     return plot_objects
 
-def write_plots(plot_spec,path='./_plots/'):
+def write_plots(plot_spec,path='./_plots/',file_format='png'):
     r"""
     Write image files to disk.  Multiple figures are written to different
     subdirectories.
     """
+    if path[-1] != '/': path = path + '/'
     if not os.path.exists(path):
         os.mkdir(path)
     for i in range(len(plot_spec[0]['data'])):
@@ -144,11 +159,22 @@ def write_plots(plot_spec,path='./_plots/'):
 
         figures = _get_figures(plot_objects)
         for figure in figures:
-            subdir = 'fig%s/' % str(figure.number)
+            items = _get_figure_items(plot_spec,figure)
+            try:
+                subdir = '_'.join(item['name'] for item in items)+'/'
+            except KeyError:
+                subdir = 'fig%s/' % str(figure.number)
             if not os.path.exists(path+subdir):
                 os.mkdir(path+subdir)
-            filename = 'frame%s.png' % str(i).zfill(4)
+            filename = 'frame%s.%s' % (str(i).zfill(4), file_format)
             figure.savefig(path+subdir+filename)
+
+def _get_figure_items(plot_spec,figure):
+    items = []
+    for item in plot_spec:
+        if item['axes'].figure == figure:
+            items.append(item)
+    return items
 
 
 def animate(plot_spec):
@@ -166,7 +192,7 @@ def animate(plot_spec):
     from clawpack.visclaw.JSAnimation import IPython_display
 
     plot_objects = plot_frame(plot_spec)
-    import yt.visualization
+    import yt
     if type(plot_objects[0][0])==yt.visualization.plot_window.AxisAlignedSlicePlot:
         fig = plot_objects[0][0].plots['Density'].figure
     else:
@@ -202,6 +228,21 @@ def make_plot_gallery(plot_path='./_plots'):
     gal.build()
     print 'Open your browser to ./_build/index.html'
 
+
+def _get_patch_values(state,field):
+    if hasattr(field, '__getitem__'):
+        return [_get_field_values(state,f) for f in field]
+    else:
+        return _get_field_values(state,field)
+
+def _get_field_values(state,field):
+    if type(field) is int:
+        q = state.q[field,...]
+    elif hasattr(field, '__call__'):
+        q = field(state)
+    else:
+        raise Exception('Unrecognized field argument in plot_item: ', field)
+    return q
 
 def _get_figures(plot_object_list_list):
     """
@@ -261,7 +302,7 @@ def _get_data_format(path):
 def _set_plot_item_defaults(item,frame_num):
     r"""Choose reasonable defaults for required options that are not specified.
     """
-    if not hasattr(item,'plot_type'):
+    if not item.has_key('plot_type'):
         num_dim = item['data'][frame_num].state.num_dim
         if num_dim == 1:
             item['plot_type'] = 'line'
@@ -270,13 +311,13 @@ def _set_plot_item_defaults(item,frame_num):
         elif num_dim == 3:
             item['plot_type'] = 'yt_slice'
 
-        # Fill in default values of None to avoid KeyErrors later
-        for attr in ['plot_objects','axes']:
-            item[attr] = item.get(attr)
-        if not item.has_key('plotargs'):
-            item['plotargs'] = {}
-        if not item.has_key('axargs'):
-            item['axargs'] = {}
+    # Fill in default values of None to avoid KeyErrors later
+    for attr in ['plot_objects','axes']:
+        item[attr] = item.get(attr)
+    if not item.has_key('plot_args'):
+        item['plot_args'] = {}
+    if not item.has_key('axis_settings'):
+        item['axis_settings'] = {}
 
 
 def _clear_axes(item):
@@ -290,12 +331,15 @@ def _clear_axes(item):
             item['axes'].cla()
 
 def _set_axis_title(item,frame_num):
-    title = 'Field %s at t = %s' % (str(item['field']),item['data'][frame_num].t)
+    if item.has_key('name'):
+        title = '%s at t = %s' % (str(item['name']),item['data'][frame_num].t)
+    else:
+        title = 'Field %s at t = %s' % (str(item['field']),item['data'][frame_num].t)
     item['axes'].set_title(title)
 
 def _solution_to_yt_ds(sol):
     r"""Convert pyclaw.Solution to yt.dataset."""
-    import yt.load_amr_grids
+    import yt
     grid_data = []
 
     for state in sorted(sol.states, key = lambda a: a.patch.level):

@@ -34,7 +34,10 @@ def run_pyclaw_2d():
 # Test functions
 def test_plot_item():
     sol = set_up_solution()
-    line, = griddle.plot_item(sol,0,'line')
+    item = {'data' : [sol],
+            'field' : 0,
+            'plot_type' : 'line'}
+    line, = griddle.plot_item(item,0)
     assert type(line) == matplotlib.lines.Line2D
     assert line.get_data()[0].shape == (100,)
 
@@ -46,7 +49,7 @@ def test_animation():
     item1 = {'data' : claw.frames,
              'field' : 0,
              'axes' : ax1,
-             'plotargs' : {'ls' : '--', 'color' : 'green'}}
+             'plot_args' : {'ls' : '--', 'color' : 'green'}}
     item2 = {'data' : claw.frames, 'field' : 1, 'axes' : ax2}
     plotitems = [item1,item2]
     animation = griddle.animate(plotitems)
@@ -67,7 +70,7 @@ def test_gallery():
     item1 = {'data' : claw.frames,
              'field' : 0,
              'axes' : ax1,
-             'plotargs' : {'ls' : '--', 'color' : 'green'}}
+             'plot_args' : {'ls' : '--', 'color' : 'green'}}
     item2 = {'data' : claw.frames,
              'field' : 1,
              'axes' : ax2}
@@ -99,10 +102,10 @@ def test_amr_plotting():
     assert type(plot_objects[0][0]) is matplotlib.collections.QuadMesh
 
 def test_yt_slice_plot():
-    import yt.visualization
+    import yt
     plot_spec = [{'data_path' : './test_data/_pyclaw_3d_shocktube',
                   'field' : 'Density',
-                  'plotargs' : {'normal' : 'z',
+                  'plot_args' : {'normal' : 'z',
                                 'origin'  : "native",
                                 'center' : [1., 0.25, 0.]}}]
     plot_objects = griddle.plot_frame(plot_spec)
