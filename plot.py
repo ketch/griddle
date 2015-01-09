@@ -33,7 +33,8 @@ def plot_frame(plot_spec,frame_num=0):
                                           file_format=item['data_format'])
 
         _set_plot_item_defaults(item,frame_num)
-        _clear_axes(item)
+        if 'yt' not in item['plot_type']:
+            _clear_axes(item)
 
     all_plot_objects = []
 
@@ -46,8 +47,11 @@ def plot_frame(plot_spec,frame_num=0):
                                  item['plot_objects'],**item['plotargs'])
 
         item['plot_objects'] = plot_objects
-        if 'yt' not in item['plot_type']:
+        if 'yt' in item['plot_type']:
+            item['axes'] = plot_objects[0].plots[item['field']].axes
+        else:
             item['axes'] = plot_objects[0].axes
+        _set_axis_title(item,frame_num)
         all_plot_objects.append(plot_objects)
 
     return all_plot_objects
@@ -83,7 +87,7 @@ def plot_item(gridded_data,field,plot_type,axes=None,plot_objects=None,**plotarg
         import yt
         if plot_objects[0] is None:
             slc = yt.SlicePlot(ds, fields=field, **plotargs)
-            slc.set_log('Density',False);
+            slc.set_log(field,False);
             #return [slc.plots.values()[0]]
             return [slc]
         else:
@@ -282,6 +286,9 @@ def _clear_axes(item):
         if item['axes'] is not None:
             item['axes'].cla()
 
+def _set_axis_title(item,frame_num):
+    title = 'Field %s at t = %s' % (str(item['field']),item['data'][frame_num].t)
+    item['axes'].set_title(title)
 
 def _solution_to_yt_ds(sol):
     r"""Convert pyclaw.Solution to yt.dataset."""
