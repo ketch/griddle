@@ -19,6 +19,8 @@ of data fields, on collections of mapped, structured grids.
 It is largely an adaptation of `clawpack.visclaw`.
 
 ### Griddle.plot usage
+For examples, see [this IPython notebook](http://nbviewer.ipython.org/09bb72bf82043942e648).
+
 The main output functionalities are:
 
 - Plot figures on screen or in the notebook.  To plot a particular frame:
