@@ -23,24 +23,26 @@ The main output functionalities are:
 
 - Plot figures on screen or in the notebook.  To plot a particular frame:
 
-    griddle.plot_frame(plot_spec, frame_num)
+    `griddle.plot_frame(plot_spec, frame_num)`
     
 - Plot an animation in the IPython notebook:
 
-    griddle.animate(plot_spec)
+    `griddle.animate(plot_spec)`
 
 - Write image files to disk
 
-    griddle.write_plots(plot_spec,path='./_plots/',file_format='png')
+    `griddle.write_plots(plot_spec,path='./_plots/',file_format='png')`
 
 - Launch an interactive plotting command loop:
 
+```
     ip = griddle.Iplotsol(plot_spec)
     ip.plotloop()
+```
 
 - Web galleries of plots (using sigal):
 
-    griddle.make_plot_gallery(plot_spec)
+    `griddle.make_plot_gallery(plot_spec)`
 
 ### `plot_spec`
 
@@ -52,7 +54,7 @@ For examples, see `griddle/test.py`.
 Each dict must specify the **data to be plotted** in one of the following ways:
 
 - `plot_spec[i]['data']` : a list of `Solution` objects
-- `plot_spec[i]['data_path'] : a directory containing Solution files
+- `plot_spec[i]['data_path']` : a directory containing Solution files
 
 Each item must specify **which values to plot** in one of the following ways:
 
