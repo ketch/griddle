@@ -192,8 +192,7 @@ def animate(plot_spec):
     from clawpack.visclaw.JSAnimation import IPython_display
 
     plot_objects = plot_frame(plot_spec)
-    import yt
-    if type(plot_objects[0][0])==yt.visualization.plot_window.AxisAlignedSlicePlot:
+    if plot_spec[0]['plot_type'] == 'yt_slice':
         fig = plot_objects[0][0].plots['Density'].figure
     else:
         fig = plot_objects[0][0].figure

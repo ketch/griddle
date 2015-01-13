@@ -1,8 +1,11 @@
-import griddle
 import matplotlib
+import griddle
 import matplotlib.pyplot as plt
 from clawpack import pyclaw
 import numpy as np
+from matplotlib.testing.decorators import image_comparison
+from nose import SkipTest
+
 
 # ===================================
 # Setup functions
@@ -32,9 +35,13 @@ def run_pyclaw_2d():
 
 # ===================================
 # Test functions
+@image_comparison(baseline_images=['item'],extensions=['png'])
 def test_plot_item():
-    sol = set_up_solution()
+    fig  = plt.figure(figsize=(8,6),dpi=100)
+    ax   = fig.add_subplot(111)
+    sol  = set_up_solution()
     item = {'data' : [sol],
+            'axes' : ax,
             'field' : 0,
             'plot_type' : 'line'}
     line, = griddle.plot_item(item,0)
@@ -102,7 +109,10 @@ def test_amr_plotting():
     assert type(plot_objects[0][0]) is matplotlib.collections.QuadMesh
 
 def test_yt_slice_plot():
-    import yt
+    try:
+        import yt
+    except:
+        raise SkipTest("yt import failed; skipping yt test.")
     plot_spec = [{'data_path' : './test_data/_pyclaw_3d_shocktube',
                   'field' : 'Density',
                   'plot_args' : {'normal' : 'z',
