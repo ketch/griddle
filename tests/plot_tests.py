@@ -85,11 +85,13 @@ def test_gallery():
     griddle.write_plots(plot_spec)
     griddle.make_plot_gallery()
 
+@image_comparison(baseline_images=['pcolor'],extensions=['png'])
 def test_pcolor():
     claw = run_pyclaw_2d()
     fig = plt.figure()
     ax = fig.add_subplot(111)
     plot_spec = [{'data' : claw.frames,
+                  'axes' : ax,
                   'field' : 0}]
     plot_object = griddle.plot_frame(plot_spec)
     assert type(plot_object[0][0]) is matplotlib.collections.QuadMesh
