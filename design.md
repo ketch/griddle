@@ -33,9 +33,9 @@ to avoid patch plots of different items covering each other.
 # (woefully incomplete) list of things that need to be implemented
 
 - [ ] plot subset of all frames
-- [ ] image comparison tests (using matplotlib's decorator)
-- [ ] test for fill_between
-- [ ] test for show_patch_boundaries
-- [ ] test for axis titles
+- [x] image comparison tests (using matplotlib's decorator)
+- [x] test for fill_between
+- [x] test for show_patch_boundaries
+- [x] test for axis titles
 - [ ] caching data across multiple items
 - [ ] automatically get and use field names from Riemann
