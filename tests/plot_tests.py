@@ -132,7 +132,7 @@ def test_fill_between():
 def test_read_data():
     pass
 
-@image_comparison(baseline_images=['amr'],extensions=['png'])
+@image_comparison(baseline_images=['amr'],extensions=['pdf'])
 def test_amr_plotting():
     fig = plt.figure(figsize=(10,10))
     ax = fig.add_subplot(111)
