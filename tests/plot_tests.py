@@ -96,14 +96,49 @@ def test_pcolor():
     plot_object = griddle.plot_frame(plot_spec)
     assert type(plot_object[0][0]) is matplotlib.collections.QuadMesh
 
+@image_comparison(baseline_images=['sill'],extensions=['png'])
+def test_fill_between():
+    r"""Also tests derived quantities."""
+    def bathymetry(state):
+        return state.aux[0,...]
+
+    def surface(state):
+        return state.aux[0,...] + state.q[0,...]
+
+    def bottom(state):
+        return state.aux[0,...]*0.-1.
+
+    from clawpack.pyclaw import examples
+    claw = examples.sill.setup()
+    claw.verbosity = 0
+    claw.run()
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    water = {'data' : claw.frames,
+             'field' : (bathymetry,surface),
+             'name' : 'depth',
+             'axes' : ax,
+             'plot_type' : 'fill_between'}
+    land = {'data' : claw.frames,
+             'field' : (bathymetry, bottom),
+             'name' : 'bathy',
+             'axes' : ax,
+             'plot_type' : 'fill_between',
+             'plot_args' : {'color' : 'brown',
+                            'edgecolor' : 'k'}}
+    griddle.animate([water,land])
+
 def test_read_data():
     pass
 
+@image_comparison(baseline_images=['amr'],extensions=['png'])
 def test_amr_plotting():
     fig = plt.figure(figsize=(10,10))
     ax = fig.add_subplot(111)
     item5 = {'data_path' : './test_data/_amrclaw_2d_acoustics/',
              'field' : 0,
+             'show_patch_boundaries' : True,
              'axes' : ax}
     plot_spec = [item5]
     plot_objects = griddle.plot_frame(plot_spec,frame_num=5);
