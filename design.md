@@ -39,3 +39,4 @@ to avoid patch plots of different items covering each other.
 - [x] test for axis titles
 - [ ] caching data across multiple items
 - [ ] automatically get and use field names from Riemann
+- [ ] set up coverage and coveralls on Travis
