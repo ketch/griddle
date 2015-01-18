@@ -40,7 +40,7 @@ def test_plot_item():
     fig  = plt.figure(figsize=(8,6),dpi=100)
     ax   = fig.add_subplot(111)
     sol  = set_up_solution()
-    item = {'data' : [sol],
+    item = {'frames' : griddle.data.TimeSeries([sol]),
             'axes' : ax,
             'field' : 0,
             'plot_type' : 'line'}
@@ -66,7 +66,7 @@ def test_iplot():
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
     plot_spec = [{'data' : claw.frames, 'field' : 0, 'axes' : ax1}]
-    ip = griddle.Iplotsol(claw.frames,plot_spec)
+    ip = griddle.Iplot(plot_spec)
 
 def test_gallery():
     claw = run_pyclaw_1d()

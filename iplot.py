@@ -14,19 +14,18 @@ import matplotlib
 matplotlib.rc('text', usetex=False)
 matplotlib.interactive(True)
 import matplotlib.pyplot as plt
+import griddle
 
 
 class Iplot(cmd.Cmd):
     """
     Class for interactively stepping through plots.
-    This is an abstraction of the Iplotclaw class, meant to
-    be flexible enough to deal with output from any simulation code
-    (or even experimental data).
+    Takes a plot_spec as argument
 
     Usage:
     ------
-    >>> from clawpack.visclaw.iplot import Iplot
-    >>> ip = Iplot()              # new instantiation
+    >>> from griddle.iplot import Iplot
+    >>> ip = Iplot(plot_spec)              # new instantiation
     >>> ip.plotloop()             # to start looping
     IPLOT > help                  # for list of available commands
     IPLOT > q                     # to quit looping and return to python
@@ -34,20 +33,9 @@ class Iplot(cmd.Cmd):
 
     Arguments:
     ----------
-    - load_frame: a function with the following signature:
+    - plot_spec is the only required arguments.
 
-        frame = load_frame(frameno)
-
-        where frameno is an integer specifying the data to be loaded
-        and frame is the loaded data.
-
-    - plot_frame: a function with the following signature:
-
-        plot_frame(frame)
-
-        where frame is the object returned by load_frame.
-
-    Other arguments of Iplot rarely need to be changed:
+    Other (optional) arguments of Iplot rarely need to be changed:
         completekey='tab', stdin=None, stdout=None
 
     The optional argument 'completekey' is the readline name of a
@@ -64,7 +52,7 @@ class Iplot(cmd.Cmd):
     prompt = 'IPLOT > '
     lastcmd = 'n'             # initialize so <return> advances frame'
 
-    def __init__(self, load_frame, plot_frame, \
+    def __init__(self, plot_spec,\
                  completekey='tab', stdin=None, stdout=None):
         """Instantiate a line-oriented interpreter framework."""
 
@@ -81,32 +69,23 @@ class Iplot(cmd.Cmd):
         self.cmdqueue = []
         self.completekey = completekey
  
-        self.load_frame = load_frame
-        self.plot_frame = plot_frame
+        griddle.plot._set_up_time_series(plot_spec)
+        self.plot_spec = plot_spec
 
         self.restart = False
         self.prevframeno = 0
 
         self.frames = {}
 
-    def plot_and_cache(self,frameno):
-        print 'Plotting frame %s' % str(frameno)
-        if frameno not in self.frames.keys():
-            try:
-                frame = self.load_frame(self.frameno)
-                self.frames[str(frameno)] = frame
-                plot_objects = self.plot_frame(frame)
-
-                figures = [obj.figure for obj in plot_objects]
-                figures = list(set(figures)) # Discard duplicates
-                for figure in figures:
-                    figure.canvas.draw()
-            except IOError:
-                print "Swallowing IOError to avoid crashing in interactive mode."
+    def plot_frame(self,frame):
+        plot_objects = griddle.plot_frame(self.plot_spec,frame)
+        figures = [obj[0].figure for obj in plot_objects]
+        figures = list(set(figures)) # Discard duplicates
+        for figure in figures:
+            figure.canvas.draw()
  
 
     def preloop(self):
-
         print '\nInteractive plotting... '
         print 'Type ? at IPLOT prompt for list of commands'
 
@@ -137,7 +116,7 @@ class Iplot(cmd.Cmd):
                 self.frameno = 0
 
         if makeplot:
-            self.plot_and_cache(self.frameno)
+            self.plot_frame(self.frameno)
 
         self.lastcmd = 'n'
         self.restart = True 
@@ -161,7 +140,7 @@ class Iplot(cmd.Cmd):
     # -----------
     def do_n(self, rest):
         self.frameno = self.frameno+1
-        self.plot_and_cache(self.frameno)
+        self.plot_frame(self.frameno)
     def help_n(self):
         print 'n: advance to next frame\n'
 
@@ -169,7 +148,7 @@ class Iplot(cmd.Cmd):
     # ---------------
     def do_p(self, rest):
         self.frameno = max(self.frameno-1, 0)
-        self.plot_and_cache(self.frameno)
+        self.plot_frame(self.frameno)
     def help_p(self):
         print 'p: go back to previous frame\n'
 
@@ -192,7 +171,7 @@ class Iplot(cmd.Cmd):
             except ValueError:
                 print '\n    *** Error: frameno must be an integer, n, or p'
             self.frameno = newframeno
-            self.plot_and_cache(self.frameno)
+            self.plot_frame(self.frameno)
     def help_j(self):
         print 'j N: jump to frame N\n'
         print 'j:   jump to some other frame (will prompt for N)\n'
@@ -200,7 +179,7 @@ class Iplot(cmd.Cmd):
     # redraw frame:
     # -------------
     def do_r(self, rest):
-        self.plot_and_cache(self.frameno)
+        self.plot_frame(self.frameno)
     def help_r(self):
         print 'r: redraw the current frame,  rr: reload and redraw\n'
 
@@ -210,7 +189,7 @@ class Iplot(cmd.Cmd):
             print 'Cleared data for frame ',self.frameno
         except KeyError:
            print 'No frame data to clear for frame ',self.frameno
-        self.plot_and_cache(self.frameno)
+        self.plot_frame(self.frameno)
     def help_rr(self):
         print 'r: redraw the current frame,  rr: reload and redraw\n'
 
@@ -360,22 +339,3 @@ class Iplot(cmd.Cmd):
     # -------------------------
     def plotloop(self):
         self.cmdloop()
-
-
-class Iplotsol(Iplot):
-    def __init__(self, gridded_data_series, plot_spec, \
-                 completekey='tab', stdin=None, stdout=None):
-        
-        self._gridded_data_series = gridded_data_series
-        self.plot_spec = plot_spec
-        Iplot.__init__(self,self.load_frame,self.plot_frame, \
-                completekey, stdin, stdout)
-
-    def load_frame(self,frameno):
-        return self._gridded_data_series[frameno]
-
-    def plot_frame(self,frame):
-        import griddle
-        plot_objects = griddle.plot_frame(self.plot_spec)
-        return plot_objects
- 

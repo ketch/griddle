@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from clawpack import pyclaw
 import os
 import numpy as np
-
+import griddle
 
 def plot_frame(plot_spec,frame_num=0):
     r"""
@@ -18,19 +18,9 @@ def plot_frame(plot_spec,frame_num=0):
     assert _valid_plot_spec(plot_spec)
 
     # Sanitize items and prepare for plotting
+    # This should happen somewhere else
+    _set_up_time_series(plot_spec)
     for item in plot_spec:
-        # Add data field if necessary; this only happens once for a time series
-        if not item.has_key('data'):
-            item['data_format'] = item.get('data_format')
-            if item['data_format'] is None:
-                item['data_format'] = _get_data_format(item['data_path'])
-            item['data'] = [None]*_get_num_data_files(item['data_path'],item['data_format'])
-
-        # Load data from file if necessary
-        if item['data'][frame_num] is None:
-            item['data'][frame_num] = pyclaw.Solution(frame_num, \
-                                          path=item['data_path'],
-                                          file_format=item['data_format'])
 
         _set_plot_item_defaults(item,frame_num)
         if 'yt' not in item['plot_type']:
@@ -67,15 +57,12 @@ def plot_item(item,frame_num):
     axes.
 
     Inputs:
-        - gridded_data : a PyClaw Solution object or a yt dataset
-        - field : an integer or a function.  If an integer, plot
-            state.q[i,...] for each state in gridded_data.states.  If a
-            function, it should accept a state as an argument and return a
-            computed field.
+        - item : a plot_spec item
+        - frame num : an integer
 
     Returns a list of handles to the plot objects (e.g., line) on each patch.
     """
-    gridded_data = item['data'][frame_num]
+    gridded_data = item['frames'][str(frame_num)]
     field = item['field']
     plot_type = item['plot_type']
     axes = item.get('axes')
@@ -137,9 +124,9 @@ def plot_item(item,frame_num):
             plot_objects[i] = axes.pcolormesh(xe, ye, q, vmin=zmin, vmax=zmax, \
                                               shading='flat', **plot_args)
             if item.get('show_patch_boundaries'):
-                axes.plot(xe[0,:],ye[0,:],'-k',lw=2,zorder=100)
+                axes.plot(xe[0, :],ye[0, :],'-k',lw=2,zorder=100)
                 axes.plot(xe[-1,:],ye[-1,:],'-k',lw=2,zorder=100)
-                axes.plot(xe[:,0],ye[:,0],'-k',lw=2,zorder=100)
+                axes.plot(xe[:, 0],ye[:, 0],'-k',lw=2,zorder=100)
                 axes.plot(xe[:,-1],ye[:,-1],'-k',lw=2,zorder=100)
 
             axes.axis('image')
@@ -154,8 +141,10 @@ def write_plots(plot_spec,path='./_plots/',file_format='png'):
     if path[-1] != '/': path = path + '/'
     if not os.path.exists(path):
         os.mkdir(path)
-    for i in range(len(plot_spec[0]['data'])):
-        plot_objects = plot_frame(plot_spec,i)
+    # This assumes all items have the same number of frames:
+    _set_up_time_series(plot_spec)
+    for frame_num in plot_spec[0]['frames'].list_frames:
+        plot_objects = plot_frame(plot_spec,frame_num)
 
         figures = _get_figures(plot_objects)
         for figure in figures:
@@ -166,10 +155,28 @@ def write_plots(plot_spec,path='./_plots/',file_format='png'):
                 subdir = 'fig%s/' % str(figure.number)
             if not os.path.exists(path+subdir):
                 os.mkdir(path+subdir)
-            filename = 'frame%s.%s' % (str(i).zfill(4), file_format)
+            filename = 'frame%s.%s' % (str(frame_num).zfill(4), file_format)
             figure.savefig(path+subdir+filename)
 
+
+def _set_up_time_series(plot_spec):
+    r"""Take a plot_spec and set the 'frames' key based on either
+        'data' or 'data_path'.
+    """
+    for item in plot_spec:
+        if not item.get('frames'):
+            if item.get('data'):
+                item['frames'] = griddle.data.TimeSeries(item['data'])
+            else:
+                item['frames'] = griddle.data.TimeSeries(item['data_path'],\
+                                 file_format=item.get('data_format'))
+
+
 def _get_figure_items(plot_spec,figure):
+    r"""
+    Take a list of items and a figure, and return the items that belong
+    to that figure.
+    """
     items = []
     for item in plot_spec:
         if item['axes'].figure == figure:
@@ -201,7 +208,7 @@ def animate(plot_spec):
         plot_objects = plot_frame(plot_spec,frame_number)
         return plot_objects[0]
 
-    return animation.FuncAnimation(fig, fplot, frames=len(plot_spec[0]['data']))
+    return animation.FuncAnimation(fig, fplot, frames=len(plot_spec[0]['frames']))
 
 
 def make_plot_gallery(plot_path='./_plots'):
@@ -229,12 +236,22 @@ def make_plot_gallery(plot_path='./_plots'):
 
 
 def _get_patch_values(state,field):
+    r"""This is just a wrapper around _get_field_values.  It iterates
+        over multiple fields if field is a list.
+    """
     if hasattr(field, '__getitem__'):
         return [_get_field_values(state,f) for f in field]
     else:
         return _get_field_values(state,field)
 
 def _get_field_values(state,field):
+    r"""
+    Inputs:
+        state : a pyclaw.State object
+        field : either an integer or a function.
+                If an integer, then return state.q[field,...].
+                If a function, then return field(state).
+    """
     if type(field) is int:
         q = state.q[field,...]
     elif hasattr(field, '__call__'):
@@ -270,39 +287,11 @@ def _valid_plot_spec(plot_spec):
                 raise Exception('Data source should be a list or relative path string.')
     return True
 
-def _get_num_data_files(path,file_format):
-    r"""Count the number of output files of type file_format in directory
-        specified by path.
-    """
-    files = os.listdir(path)
-    file_string = file_substrings[file_format]
-    data_files = [file_string in filename for filename in files]
-    return data_files.count(True)
-
-def _get_data_format(path):
-    r"""Figure out which file format to read.
-
-        Check which of the known file types are present in directory specified
-        by `path`.  If multiple types are present, ask user which to use.
-    """
-    files = os.listdir(path)
-    file_types_present = []
-    for file_type, string in file_substrings.iteritems():
-        if any([string in filename for filename in files]):
-            file_types_present.append(file_type)
-
-    if len(file_types_present)==1:
-        return file_types_present[0]
-    else:
-        return raw_input("""Multiple file types are present in the specified
-                        data directory.  Which do you wish to use?
-                        """+file_types_present)
-
 def _set_plot_item_defaults(item,frame_num):
     r"""Choose reasonable defaults for required options that are not specified.
     """
     if not item.has_key('plot_type'):
-        num_dim = item['data'][frame_num].state.num_dim
+        num_dim = item['frames'][frame_num].state.num_dim
         if num_dim == 1:
             item['plot_type'] = 'line'
         elif num_dim == 2:
@@ -331,9 +320,9 @@ def _clear_axes(item):
 
 def _set_axis_title(item,frame_num):
     if item.has_key('name'):
-        title = '%s at t = %s' % (str(item['name']),item['data'][frame_num].t)
+        title = '%s at t = %s' % (str(item['name']),item['frames'][frame_num].t)
     else:
-        title = 'Field %s at t = %s' % (str(item['field']),item['data'][frame_num].t)
+        title = 'Field %s at t = %s' % (str(item['field']),item['frames'][frame_num].t)
     item['axes'].set_title(title)
 
 def _solution_to_yt_ds(sol):
@@ -358,10 +347,3 @@ def _solution_to_yt_ds(sol):
         grid_data.append(d)
         bbox = np.vstack((sol.patch.lower_global,sol.patch.upper_global)).T;
     return yt.load_amr_grids(grid_data, sol.patch.num_cells_global, bbox = bbox)
-
-
-file_substrings = { #should be 'extensions'
-        'ascii' : 'fort.q',
-        'hdf5'  : 'hdf',
-        'petsc' : 'ptc'
-        }
