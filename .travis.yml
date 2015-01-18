@@ -3,6 +3,8 @@ python:
   - "2.7"
 
 before_install:
+  - pip install coverage
+  - pip install python-coveralls
     #- pip install -U Cython
   - pip install numpy
   - pip install matplotlib
@@ -18,4 +20,7 @@ install:
 
 script:
   - cd $HOME/build/ketch/griddle
-  - python tests.py
+  - python tests.py -v --with-coverage --cover-package=griddle;
+
+after_success:
+  - coveralls

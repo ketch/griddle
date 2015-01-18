@@ -2,6 +2,7 @@
 
 import matplotlib
 import nose
+import sys
 matplotlib.use('agg')
 
-nose.main()
+nose.main(argv=sys.argv)
