@@ -1,0 +1,7 @@
+*.pyc
+.coverage
+_output
+_plots
+_build
+*.log
+result_images
