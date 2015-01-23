@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/ketch/griddle.svg?branch=master)](https://travis-ci.org/ketch/griddle)
+[![Coverage Status](https://coveralls.io/repos/ketch/griddle/badge.svg?branch=master)](https://coveralls.io/r/ketch/griddle?branch=master)
+
 # Griddle project scope
 
 Griddle deals with data fields on collections of mapped, structured grids.  It enables reading, writing, and plotting of such data, including time series.  It interfaces to:
