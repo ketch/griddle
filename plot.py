@@ -129,7 +129,8 @@ def plot_item(item,frame_num):
                 axes.plot(xe[:, 0],ye[:, 0],'-k',lw=2,zorder=100)
                 axes.plot(xe[:,-1],ye[:,-1],'-k',lw=2,zorder=100)
 
-            axes.axis('image')
+    if plot_type == 'pcolor':
+        axes.axis('image')
 
     return plot_objects
 

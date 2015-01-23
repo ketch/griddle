@@ -3,12 +3,18 @@ python:
   - "2.7"
 
 before_install:
+  - sudo apt-get install libhdf5-serial-dev
   - pip install coverage
   - pip install python-coveralls
-    #- pip install -U Cython
   - pip install numpy
   - pip install matplotlib
-    #- pip install yt
+  # yt and dependencies
+  - pip install -U Cython
+  - pip install sympy
+  - pip install h5py
+  - pip install yt
+  - python -c "import yt; print yt.__version__"
+  ####
   - pip install sigal
   - sudo apt-get update -qq
   - sudo apt-get install -qq gfortran liblapack-pic
