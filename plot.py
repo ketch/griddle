@@ -198,6 +198,12 @@ def animate(plot_spec):
     from matplotlib import animation
     from clawpack.visclaw.JSAnimation import IPython_display
 
+    assert _valid_plot_spec(plot_spec)
+
+    # Sanitize items and prepare for plotting
+    # This should happen somewhere else
+    _set_up_time_series(plot_spec)
+
     plot_objects = plot_frame(plot_spec)
     if plot_spec[0]['plot_type'] == 'yt_slice':
         fig = plot_objects[0][0].plots['Density'].figure
@@ -208,7 +214,7 @@ def animate(plot_spec):
         plot_objects = plot_frame(plot_spec,frame_number)
         return plot_objects[0]
 
-    return animation.FuncAnimation(fig, fplot, frames=len(plot_spec[0]['frames']))
+    return animation.FuncAnimation(fig, fplot, frames=len(plot_spec[0]['frames'].list_frames))
 
 
 def make_plot_gallery(plot_path='./_plots'):
