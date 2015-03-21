@@ -17,17 +17,17 @@ def plot_frame(plot_spec,frame_num=0):
     """
 
     # Sanitize items and prepare for plotting
-    # This should happen somewhere else
+    # Most of this should happen somewhere else
+    # probably in PlotItem.__init__().
 
     for plot_item in plot_spec:
         _set_up_time_series(plot_item)
-        _set_plot_item_defaults(plot_item,frame_num)
+        _set_plot_item_defaults(plot_item)
         assert _valid_plot_item(plot_item)
         if 'yt' not in plot_item['plot_type']:
             _clear_item_axes(plot_item)
 
     all_plot_objects = []
-
 
     # Now do the actual plots
     for plot_item in plot_spec:
@@ -205,6 +205,7 @@ def animate(plot_spec):
     # This should happen somewhere else
     for plot_item in plot_spec:
         _set_up_time_series(plot_item)
+        _set_plot_item_defaults(plot_item)
         assert _valid_plot_item(plot_item)
 
     plot_objects = plot_frame(plot_spec)
@@ -296,15 +297,15 @@ def _valid_plot_item(plot_item):
             raise Exception('Data source should be a list or relative path string.')
     if not plot_item.has_key('field'):
         raise Exception('A field must be specified for each plot_item.')
-    # It's okay if plot_type hasn't been specified; we'll just supply a default
-    # based on the number of dimensions.
+    if not plot_item.has_key('plot_type'):
+        raise Exception('A plot_type must be specified for each plot_item.')
     return True
 
-def _set_plot_item_defaults(plot_item,frame_num):
+def _set_plot_item_defaults(plot_item):
     r"""Choose reasonable defaults for required options that are not specified.
     """
     if not plot_item.has_key('plot_type'):
-        num_dim = plot_item['frames'][frame_num].state.num_dim
+        num_dim = plot_item['frames'][0].state.num_dim
         if num_dim == 1:
             plot_item['plot_type'] = 'line'
         elif num_dim == 2:
