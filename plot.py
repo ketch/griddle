@@ -121,8 +121,10 @@ def plot_item(item,frame_num):
             plot_objects[i] = axes.fill_between(xc,q[0],q[1],**plot_args)
         elif plot_type == 'pcolor':
             xe, ye = state.grid.p_edges
-            plot_objects[i] = axes.pcolormesh(xe, ye, q, vmin=zmin, vmax=zmax, \
-                                              shading='flat', **plot_args)
+            plot_objects[i] = axes.pcolormesh(xe, ye, q, vmin=zmin, \
+                                              vmax=zmax, shading='flat', \
+                                              zorder=state.patch.level, \
+                                              **plot_args)
             if item.get('show_patch_boundaries'):
                 axes.plot(xe[0, :],ye[0, :],'-k',lw=2,zorder=100)
                 axes.plot(xe[-1,:],ye[-1,:],'-k',lw=2,zorder=100)
