@@ -15,16 +15,16 @@ def plot_frame(plot_spec,frame_num=0):
     `all_plot_objects[i][j]` is a handle to the plot object for item
     `plot_spec[i]` on patch j.
     """
-    assert _valid_plot_spec(plot_spec)
 
     # Sanitize items and prepare for plotting
     # This should happen somewhere else
-    _set_up_time_series(plot_spec)
-    for item in plot_spec:
 
+    for item in plot_spec:
+        _set_up_time_series(item)
         _set_plot_item_defaults(item,frame_num)
+        assert _valid_plot_item(item)
         if 'yt' not in item['plot_type']:
-            _clear_axes(item)
+            _clear_item_axes(item)
 
     all_plot_objects = []
 
@@ -144,7 +144,8 @@ def write_plots(plot_spec,path='./_plots/',file_format='png'):
     if not os.path.exists(path):
         os.mkdir(path)
     # This assumes all items have the same number of frames:
-    _set_up_time_series(plot_spec)
+    for item in plot_spec:
+        _set_up_time_series(item)
     for frame_num in plot_spec[0]['frames'].list_frames:
         plot_objects = plot_frame(plot_spec,frame_num)
 
@@ -161,17 +162,16 @@ def write_plots(plot_spec,path='./_plots/',file_format='png'):
             figure.savefig(path+subdir+filename)
 
 
-def _set_up_time_series(plot_spec):
-    r"""Take a plot_spec and set the 'frames' key based on either
+def _set_up_time_series(item):
+    r"""Take a item and set the 'frames' key based on either
         'data' or 'data_path'.
     """
-    for item in plot_spec:
-        if not item.get('frames'):
-            if item.get('data'):
-                item['frames'] = griddle.data.TimeSeries(item['data'])
-            else:
-                item['frames'] = griddle.data.TimeSeries(item['data_path'],\
-                                 file_format=item.get('data_format'))
+    if not item.get('frames'):
+        if item.get('data'):
+            item['frames'] = griddle.data.TimeSeries(item['data'])
+        else:
+            item['frames'] = griddle.data.TimeSeries(item['data_path'],\
+                             file_format=item.get('data_format'))
 
 
 def _get_figure_items(plot_spec,figure):
@@ -200,11 +200,12 @@ def animate(plot_spec):
     from matplotlib import animation
     from clawpack.visclaw.JSAnimation import IPython_display
 
-    assert _valid_plot_spec(plot_spec)
 
     # Sanitize items and prepare for plotting
     # This should happen somewhere else
-    _set_up_time_series(plot_spec)
+    for item in plot_spec:
+        _set_up_time_series(item)
+        assert _valid_plot_item(item)
 
     plot_objects = plot_frame(plot_spec)
     if plot_spec[0]['plot_type'] == 'yt_slice':
@@ -265,7 +266,7 @@ def _get_field_values(state,field):
     elif hasattr(field, '__call__'):
         q = field(state)
     else:
-        raise Exception('Unrecognized field argument in plot_item: ', field)
+        raise Exception('Unrecognized field argument in item: ', field)
     return q
 
 def _get_figures(plot_object_list_list):
@@ -280,19 +281,23 @@ def _get_figures(plot_object_list_list):
     return figures
 
 
-def _valid_plot_spec(plot_spec):
-    r"""Check that a plot_spec argument is valid.
+def _valid_plot_item(item):
+    r"""Check that a plot item is valid.
 
-    A plot_spec should be a list of dictionaries.
+    A plot_item should be a dictionary.
     """
-    for item in plot_spec:
-        if not type(item) is dict:
-            raise Exception('Each plot_spec entry should be a dictionary.')
-        if not item.has_key('data_path'):
-            if not item.has_key('data'):
-                raise Exception('Data source not specified.')
-            if not hasattr(item['data'],'__getitem__'):
-                raise Exception('Data source should be a list or relative path string.')
+    if not type(item) is dict:
+        raise Exception('Each plot_spec entry should be a dictionary.')
+    if not item.has_key('data_path'):
+        if not item.has_key('data'):
+            raise Exception('For each item, you must specify either \
+                             "data" or "data path".')
+        if not hasattr(item['data'],'__getitem__'):
+            raise Exception('Data source should be a list or relative path string.')
+    if not item.has_key('field'):
+        raise Exception('A field must be specified for each item.')
+    # It's okay if plot_type hasn't been specified; we'll just supply a default
+    # based on the number of dimensions.
     return True
 
 def _set_plot_item_defaults(item,frame_num):
@@ -316,15 +321,16 @@ def _set_plot_item_defaults(item,frame_num):
         item['axis_settings'] = {}
 
 
-def _clear_axes(item):
+def _clear_item_axes(item):
         # Clear old items from plot axes
-        # This doesn't work correctly:
+        if item['axes'] is not None:
+            item['axes'].cla()
+        # The code below doesn't work correctly:
         #if item['plot_objects'] is not None:
         #    for plot_object in item['plot_objects']:
         #        plot_object.remove()
         #        del plot_object
-        if item['axes'] is not None:
-            item['axes'].cla()
+
 
 def _set_axis_title(item,frame_num):
     if item.has_key('name'):

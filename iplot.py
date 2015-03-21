@@ -69,7 +69,8 @@ class Iplot(cmd.Cmd):
         self.cmdqueue = []
         self.completekey = completekey
  
-        griddle.plot._set_up_time_series(plot_spec)
+        for item in plot_spec:
+            griddle.plot._set_up_time_series(item)
         self.plot_spec = plot_spec
 
         self.restart = False
