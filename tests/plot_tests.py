@@ -44,7 +44,7 @@ def test_plot_item():
             'axes' : ax,
             'field' : 0,
             'plot_type' : 'line'}
-    line, = griddle.plot_item(item,0)
+    line, = griddle.plot_item_frame(item,0)
     assert type(line) == matplotlib.lines.Line2D
     assert line.get_data()[0].shape == (100,)
 

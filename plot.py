@@ -12,62 +12,62 @@ def plot_frame(plot_spec,frame_num=0):
     Plot a list of items, specified in plot_spec, using `frame[frame_num]`.
 
     Returns: `all_plot_objects`, a list of lists of plot objects.
-    `all_plot_objects[i][j]` is a handle to the plot object for item
+    `all_plot_objects[i][j]` is a handle to the plot object for plot_item
     `plot_spec[i]` on patch j.
     """
 
     # Sanitize items and prepare for plotting
     # This should happen somewhere else
 
-    for item in plot_spec:
-        _set_up_time_series(item)
-        _set_plot_item_defaults(item,frame_num)
-        assert _valid_plot_item(item)
-        if 'yt' not in item['plot_type']:
-            _clear_item_axes(item)
+    for plot_item in plot_spec:
+        _set_up_time_series(plot_item)
+        _set_plot_item_defaults(plot_item,frame_num)
+        assert _valid_plot_item(plot_item)
+        if 'yt' not in plot_item['plot_type']:
+            _clear_item_axes(plot_item)
 
     all_plot_objects = []
 
 
     # Now do the actual plots
-    for item in plot_spec:
+    for plot_item in plot_spec:
 
-        plot_objects = plot_item(item,frame_num)
+        plot_objects = plot_item_frame(plot_item,frame_num)
 
-        item['plot_objects'] = plot_objects
-        if 'yt' in item['plot_type']:
-            item['axes'] = plot_objects[0].plots[item['field']].axes
+        plot_item['plot_objects'] = plot_objects
+        if 'yt' in plot_item['plot_type']:
+            plot_item['axes'] = plot_objects[0].plots[plot_item['field']].axes
         else:
-            item['axes'] = plot_objects[0].axes
-        item['axes'].set(**item['axis_settings'])
-        _set_axis_title(item,frame_num)
-        item['axes'].figure.set_tight_layout(True)
+            plot_item['axes'] = plot_objects[0].axes
+        plot_item['axes'].set(**plot_item['axis_settings'])
+        _set_axis_title(plot_item,frame_num)
+        plot_item['axes'].figure.set_tight_layout(True)
 
-        if item['plot_type'] in ['pcolor'] and not item.has_key('colorbar'):
-            item['colorbar'] = item['axes'].figure.colorbar(plot_objects[0])
+        if plot_item['plot_type'] in ['pcolor'] and not plot_item.has_key('colorbar'):
+            plot_item['colorbar'] = plot_item['axes'].figure.colorbar(plot_objects[0])
 
         all_plot_objects.append(plot_objects)
 
     return all_plot_objects
 
 
-def plot_item(item,frame_num):
+def plot_item_frame(plot_item,frame_num):
     r"""
-    Plot a single item (typically one field of one gridded_data) on a specified
+    Plot a single plot_item (typically one field of one gridded_data) on a specified
     axes.
 
     Inputs:
-        - item : a plot_spec item
+        - plot_item : a plot_spec plot_item
         - frame num : an integer
 
     Returns a list of handles to the plot objects (e.g., line) on each patch.
     """
-    gridded_data = item['frames'][str(frame_num)]
-    field = item['field']
-    plot_type = item['plot_type']
-    axes = item.get('axes')
-    plot_objects = item.get('plot_objects')
-    plot_args = item.get('plot_args',{})
+    gridded_data = plot_item['frames'][str(frame_num)]
+    field = plot_item['field']
+    plot_type = plot_item['plot_type']
+    axes = plot_item.get('axes')
+    plot_objects = plot_item.get('plot_objects')
+    plot_args = plot_item.get('plot_args',{})
 
     if 'yt' in plot_type:
         # For yt plots, convert to yt.dataset
@@ -125,7 +125,7 @@ def plot_item(item,frame_num):
                                               vmax=zmax, shading='flat', \
                                               zorder=state.patch.level, \
                                               **plot_args)
-            if item.get('show_patch_boundaries'):
+            if plot_item.get('show_patch_boundaries'):
                 axes.plot(xe[0, :],ye[0, :],'-k',lw=2,zorder=100)
                 axes.plot(xe[-1,:],ye[-1,:],'-k',lw=2,zorder=100)
                 axes.plot(xe[:, 0],ye[:, 0],'-k',lw=2,zorder=100)
@@ -144,8 +144,8 @@ def write_plots(plot_spec,path='./_plots/',file_format='png'):
     if not os.path.exists(path):
         os.mkdir(path)
     # This assumes all items have the same number of frames:
-    for item in plot_spec:
-        _set_up_time_series(item)
+    for plot_item in plot_spec:
+        _set_up_time_series(plot_item)
     for frame_num in plot_spec[0]['frames'].list_frames:
         plot_objects = plot_frame(plot_spec,frame_num)
 
@@ -153,7 +153,7 @@ def write_plots(plot_spec,path='./_plots/',file_format='png'):
         for figure in figures:
             items = _get_figure_items(plot_spec,figure)
             try:
-                subdir = '_'.join(item['name'] for item in items)+'/'
+                subdir = '_'.join(plot_item['name'] for plot_item in items)+'/'
             except KeyError:
                 subdir = 'fig%s/' % str(figure.number)
             if not os.path.exists(path+subdir):
@@ -162,16 +162,16 @@ def write_plots(plot_spec,path='./_plots/',file_format='png'):
             figure.savefig(path+subdir+filename)
 
 
-def _set_up_time_series(item):
-    r"""Take a item and set the 'frames' key based on either
+def _set_up_time_series(plot_item):
+    r"""Take a plot_item and set the 'frames' key based on either
         'data' or 'data_path'.
     """
-    if not item.get('frames'):
-        if item.get('data'):
-            item['frames'] = griddle.data.TimeSeries(item['data'])
+    if not plot_item.get('frames'):
+        if plot_item.get('data'):
+            plot_item['frames'] = griddle.data.TimeSeries(plot_item['data'])
         else:
-            item['frames'] = griddle.data.TimeSeries(item['data_path'],\
-                             file_format=item.get('data_format'))
+            plot_item['frames'] = griddle.data.TimeSeries(plot_item['data_path'],\
+                             file_format=plot_item.get('data_format'))
 
 
 def _get_figure_items(plot_spec,figure):
@@ -180,16 +180,16 @@ def _get_figure_items(plot_spec,figure):
     to that figure.
     """
     items = []
-    for item in plot_spec:
-        if item['axes'].figure == figure:
-            items.append(item)
+    for plot_item in plot_spec:
+        if plot_item['axes'].figure == figure:
+            items.append(plot_item)
     return items
 
 
 def animate(plot_spec):
     """
     Create an animation widget in an IPython notebook.
-    Note that only the figure corresponding to the first item
+    Note that only the figure corresponding to the first plot_item
     in plot_spec will be animated; the rest will be ignored.
 
     plot_spec[i]['data'] may be:
@@ -203,9 +203,9 @@ def animate(plot_spec):
 
     # Sanitize items and prepare for plotting
     # This should happen somewhere else
-    for item in plot_spec:
-        _set_up_time_series(item)
-        assert _valid_plot_item(item)
+    for plot_item in plot_spec:
+        _set_up_time_series(plot_item)
+        assert _valid_plot_item(plot_item)
 
     plot_objects = plot_frame(plot_spec)
     if plot_spec[0]['plot_type'] == 'yt_slice':
@@ -266,7 +266,7 @@ def _get_field_values(state,field):
     elif hasattr(field, '__call__'):
         q = field(state)
     else:
-        raise Exception('Unrecognized field argument in item: ', field)
+        raise Exception('Unrecognized field argument in plot_item: ', field)
     return q
 
 def _get_figures(plot_object_list_list):
@@ -281,63 +281,63 @@ def _get_figures(plot_object_list_list):
     return figures
 
 
-def _valid_plot_item(item):
-    r"""Check that a plot item is valid.
+def _valid_plot_item(plot_item):
+    r"""Check that a plot_item is valid.
 
     A plot_item should be a dictionary.
     """
-    if not type(item) is dict:
+    if not type(plot_item) is dict:
         raise Exception('Each plot_spec entry should be a dictionary.')
-    if not item.has_key('data_path'):
-        if not item.has_key('data'):
-            raise Exception('For each item, you must specify either \
+    if not plot_item.has_key('data_path'):
+        if not plot_item.has_key('data'):
+            raise Exception('For each plot_item, you must specify either \
                              "data" or "data path".')
-        if not hasattr(item['data'],'__getitem__'):
+        if not hasattr(plot_item['data'],'__getitem__'):
             raise Exception('Data source should be a list or relative path string.')
-    if not item.has_key('field'):
-        raise Exception('A field must be specified for each item.')
+    if not plot_item.has_key('field'):
+        raise Exception('A field must be specified for each plot_item.')
     # It's okay if plot_type hasn't been specified; we'll just supply a default
     # based on the number of dimensions.
     return True
 
-def _set_plot_item_defaults(item,frame_num):
+def _set_plot_item_defaults(plot_item,frame_num):
     r"""Choose reasonable defaults for required options that are not specified.
     """
-    if not item.has_key('plot_type'):
-        num_dim = item['frames'][frame_num].state.num_dim
+    if not plot_item.has_key('plot_type'):
+        num_dim = plot_item['frames'][frame_num].state.num_dim
         if num_dim == 1:
-            item['plot_type'] = 'line'
+            plot_item['plot_type'] = 'line'
         elif num_dim == 2:
-            item['plot_type'] = 'pcolor'
+            plot_item['plot_type'] = 'pcolor'
         elif num_dim == 3:
-            item['plot_type'] = 'yt_slice'
+            plot_item['plot_type'] = 'yt_slice'
 
     # Fill in default values of None to avoid KeyErrors later
     for attr in ['plot_objects','axes']:
-        item[attr] = item.get(attr)
-    if not item.has_key('plot_args'):
-        item['plot_args'] = {}
-    if not item.has_key('axis_settings'):
-        item['axis_settings'] = {}
+        plot_item[attr] = plot_item.get(attr)
+    if not plot_item.has_key('plot_args'):
+        plot_item['plot_args'] = {}
+    if not plot_item.has_key('axis_settings'):
+        plot_item['axis_settings'] = {}
 
 
-def _clear_item_axes(item):
+def _clear_item_axes(plot_item):
         # Clear old items from plot axes
-        if item['axes'] is not None:
-            item['axes'].cla()
+        if plot_item['axes'] is not None:
+            plot_item['axes'].cla()
         # The code below doesn't work correctly:
-        #if item['plot_objects'] is not None:
-        #    for plot_object in item['plot_objects']:
+        #if plot_item['plot_objects'] is not None:
+        #    for plot_object in plot_item['plot_objects']:
         #        plot_object.remove()
         #        del plot_object
 
 
-def _set_axis_title(item,frame_num):
-    if item.has_key('name'):
-        title = '%s at t = %s' % (str(item['name']),item['frames'][frame_num].t)
+def _set_axis_title(plot_item,frame_num):
+    if plot_item.has_key('name'):
+        title = '%s at t = %s' % (str(plot_item['name']),plot_item['frames'][frame_num].t)
     else:
-        title = 'Field %s at t = %s' % (str(item['field']),item['frames'][frame_num].t)
-    item['axes'].set_title(title)
+        title = 'Field %s at t = %s' % (str(plot_item['field']),plot_item['frames'][frame_num].t)
+    plot_item['axes'].set_title(title)
 
 def _solution_to_yt_ds(sol):
     r"""Convert pyclaw.Solution to yt.dataset."""
