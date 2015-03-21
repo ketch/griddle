@@ -11,6 +11,10 @@ class TimeSeries(dict):
 
         1. from file, based on a path and extension; or
         2. from a controller or list of frames in memory.
+
+        For now, it is assumed that frames are numbered from 0 to N and that
+        all frames exist.  This could be made more general by modifying
+        `list_frames` and `_get_num_data_files`.
     """
     @property
     def list_frames(self):
@@ -21,6 +25,9 @@ class TimeSeries(dict):
             return range(_get_num_data_files(self._data_path,self._data_format))
 
     def __getitem__(self, key):
+        """Accept either integers or strings as keys.
+           Load the requested frame if it is not cached already.
+        """
         if type(key) is int:
             key = str(key)
         try:
@@ -33,6 +40,9 @@ class TimeSeries(dict):
                 print 'Frame %s does not exist' % key
 
     def __init__(self,path_or_list,file_format=None):
+        """Set up the function _get_frame, which loads individual
+           frames (either from memory or from file).
+        """
         super(TimeSeries, self).__init__()
 
         if type(path_or_list) == str:
