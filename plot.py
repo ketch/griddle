@@ -19,7 +19,6 @@ def plot_frame(plot_spec,frame_num=0):
     # Sanitize items and prepare for plotting
     # Most of this should happen somewhere else
     # probably in PlotItem.__init__().
-
     for plot_item in plot_spec:
         _set_up_time_series(plot_item)
         _set_plot_item_defaults(plot_item)
@@ -35,10 +34,12 @@ def plot_frame(plot_spec,frame_num=0):
         plot_objects = plot_item_frame(plot_item,frame_num)
 
         plot_item['plot_objects'] = plot_objects
+
         if 'yt' in plot_item['plot_type']:
             plot_item['axes'] = plot_objects[0].plots[plot_item['field']].axes
         else:
             plot_item['axes'] = plot_objects[0].axes
+
         plot_item['axes'].set(**plot_item['axis_settings'])
         _set_axis_title(plot_item,frame_num)
         plot_item['axes'].figure.set_tight_layout(True)
@@ -75,29 +76,30 @@ def plot_item_frame(plot_item,frame_num):
         if plot_objects is None: # yt plots are always a single object
             plot_objects = [None]
     else:
-        # For matplotlib plots, replace instead of updating in-place
+        # For matplotlib plots, replace plot objects instead of updating in-place
         plot_objects = [None]*len(gridded_data.states)
 
-    # ===============
-    # yt plotting
-    # ===============
+    # =======================================
+    # yt plotting - AMR patches handled by yt
+    # =======================================
     if plot_type == 'yt_slice':
         import yt
         if plot_objects[0] is None:
-            slc = yt.SlicePlot(ds, fields=field, **plot_args)
-            slc.set_log(field,False);
-            #return [slc.plots.values()[0]]
-            return [slc]
+            slice_plot = yt.SlicePlot(ds, fields=field, **plot_args)
+            slice_plot.set_log(field,False);
+            #return [slice_plot.plots.values()[0]]
+            return [slice_plot]
         else:
+            # If the plot object already exists, just change the data source
             plot_objects[0]._switch_ds(ds)
             return plot_objects
 
-    # ===============
-    # non-yt plotting
-    # ===============
+    # ==========================================
+    # non-yt plotting - AMR patches handled here
+    # ==========================================
     patch_values = []
     for state in gridded_data.states:
-        q = _get_patch_values(state,field)
+        q = _get_field_values_on_all_patches(state,field)
         patch_values.append(q)
 
     if plot_type == 'pcolor':
@@ -200,9 +202,9 @@ def animate(plot_spec):
     from matplotlib import animation
     from clawpack.visclaw.JSAnimation import IPython_display
 
-
     # Sanitize items and prepare for plotting
     # This should happen somewhere else
+    # probably in PlotItem.__init__().
     for plot_item in plot_spec:
         _set_up_time_series(plot_item)
         _set_plot_item_defaults(plot_item)
@@ -245,7 +247,7 @@ def make_plot_gallery(plot_path='./_plots'):
     print 'Open your browser to ./_build/index.html'
 
 
-def _get_patch_values(state,field):
+def _get_field_values_on_all_patches(state,field):
     r"""This is just a wrapper around _get_field_values.  It iterates
         over multiple fields if field is a list.
     """
