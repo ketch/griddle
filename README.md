@@ -1,6 +1,15 @@
 [![Build Status](https://travis-ci.org/ketch/griddle.svg?branch=master)](https://travis-ci.org/ketch/griddle)
 [![Coverage Status](https://coveralls.io/repos/ketch/griddle/badge.svg?branch=master)](https://coveralls.io/r/ketch/griddle?branch=master)
 
+# Roadmap
+
+- [ ] Fork (copy) PyClaw's state and solution objects to griddle
+- [ ] Fork (copy) PyClaw's file IO to griddle
+- [ ] Move griddle repo to the Clawpack organization on Github
+- [ ] Modify all PyClaw examples to rely on griddle instead
+- [ ] Make other Clawpack projects rely on Griddle instead of PyClaw
+- [ ] Remove geometry, state, solution, and IO from PyClaw
+
 # Griddle project scope
 
 Griddle deals with data fields on collections of mapped, structured grids.  It enables reading, writing, and plotting of such data, including time series.  It interfaces to:
