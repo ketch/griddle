@@ -1,5 +1,5 @@
 r"""
-Module defining Pyclaw geometry objects.
+Module defining geometry objects.
 """
 
 from __future__ import absolute_import
@@ -53,13 +53,13 @@ class Grid(object):
         Output:
          - (:class:`grid`) Initialized grid object
 
-    A PyClaw grid is usually constructed from a tuple of PyClaw Dimension objects:
+    A grid is usually constructed from a tuple of Dimension objects:
 
-        >>> from clawpack.pyclaw.geometry import Dimension, Grid      
+        >>> from griddle.geometry import Dimension, Grid
         >>> x = Dimension(0.,1.,10,name='x')
         >>> y = Dimension(-1.,1.,25,name='y')
         >>> grid = Grid((x,y))
-        >>> print grid
+        >>> print(grid)
         2-dimensional domain (x,y)
         No mapping
         Extent:  [0.0, 1.0] x [-1.0, 1.0]
@@ -95,7 +95,7 @@ class Grid(object):
 
         >>> import numpy as np
         >>> np.set_printoptions(precision=2)  # avoid doctest issues with roundoff
-        >>> grid.c_center([1,2,3])
+        >>> np.array(grid.p_center([1,2,3]))
         array([ 0.15, -0.8 , -1.33])
         >>> grid.p_nodes[0][0,0,0]
         0.0
@@ -108,10 +108,10 @@ class Grid(object):
 
         >>> x = Dimension(0.,1.,5,name='x')
         >>> grid1d = Grid([x])
-        >>> grid1d.c_centers
-        [array([ 0.1,  0.3,  0.5,  0.7,  0.9])]
-        >>> grid1d.c_centers_with_ghost(2)
-        [array([-0.3, -0.1,  0.1,  0.3,  0.5,  0.7,  0.9,  1.1,  1.3])]
+        >>> grid1d.p_centers
+        (array([ 0.1,  0.3,  0.5,  0.7,  0.9]),)
+        >>> grid1d.p_centers_with_ghost(2)
+        (array([-0.3, -0.1,  0.1,  0.3,  0.5,  0.7,  0.9,  1.1,  1.3]),)
         
     Mappings
     ========
@@ -121,15 +121,29 @@ class Grid(object):
 
         >>> double = lambda xarr : np.array([x**2 for x in xarr])
         >>> grid1d.mapc2p = double
+        >>> print(grid1d)
+        1-dimensional domain (x)
+        Mapping function: <lambda>
+        Computational domain: [0.0, 1.0]
+        Cells:  5
         >>> grid1d.p_centers
         array([ 0.01,  0.09,  0.25,  0.49,  0.81])
 
-    Note that the 'nodes' (or nodes) of the mapped grid are the mapped values
+    Note that the nodes of the mapped grid are the mapped values
     of the computational nodes.  In general, they are not the midpoints between
     mapped centers:
 
         >>> grid1d.p_nodes
         array([ 0.  ,  0.04,  0.16,  0.36,  0.64,  1.  ])
+
+    The coordinates of the reference grid are still available; they are
+    referred to as the 'computational' coordinates ('c' for short):
+
+        >>> grid1d.c_centers
+        [array([ 0.1,  0.3,  0.5,  0.7,  0.9])]
+        >>> grid1d.c_nodes
+        [array([ 0. ,  0.2,  0.4,  0.6,  0.8,  1. ])]
+
     """
 
     def __getattr__(self,key):
@@ -507,9 +521,9 @@ class Dimension(object):
 
     Example:
 
-    >>> from clawpack.pyclaw.geometry import Dimension
+    >>> from griddle.geometry import Dimension
     >>> x = Dimension(0.,1.,100,name='x')
-    >>> print x
+    >>> print(x)
     Dimension x:  (num_cells,delta,[lower,upper]) = (100,0.01,[0.0,1.0])
     >>> x.name
     'x'
@@ -659,7 +673,7 @@ class Dimension(object):
         
 
 # ============================================================================
-#  Pyclaw Patch object definition
+#  Patch object definition
 # ============================================================================
 class Patch(object):
     """
@@ -755,7 +769,7 @@ class Patch(object):
         return output
     
 # ============================================================================
-#  Pyclaw Domain object definition
+#  Domain object definition
 # ============================================================================
 class Domain(object):
     r"""
@@ -774,11 +788,11 @@ class Domain(object):
 
     :Examples:
 
-        >>> from clawpack import pyclaw
-        >>> domain = pyclaw.Domain( (0.,0.), (1.,1.), (100,100))
-        >>> print domain.num_dim
+        >>> import griddle
+        >>> domain = griddle.geometry.Domain( (0.,0.), (1.,1.), (100,100))
+        >>> print(domain.num_dim)
         2
-        >>> print domain.grid.num_cells
+        >>> print(domain.grid.num_cells)
         [100, 100]
     """
     @property

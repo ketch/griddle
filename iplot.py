@@ -4,8 +4,8 @@ Module Iplot for interactive plotting.
 For more instructions see the Usage notes in class Iplot below. 
 
 For options during looping type:
-  >>> ip = iplot()
-  >>> ip.plotloop()
+  >>> ip = iplot()    # doctest: +SKIP
+  >>> ip.plotloop()    # doctest: +SKIP
   IPLOT> help
 """
 
@@ -24,12 +24,12 @@ class Iplot(cmd.Cmd):
 
     Usage:
     ------
-    >>> from griddle.iplot import Iplot
-    >>> ip = Iplot(plot_spec)              # new instantiation
-    >>> ip.plotloop()             # to start looping
+    >>> from griddle.iplot import Iplot    # doctest: +SKIP
+    >>> ip = Iplot(plot_spec)              # new instantiation    # doctest: +SKIP
+    >>> ip.plotloop()             # to start looping    # doctest: +SKIP
     IPLOT > help                  # for list of available commands
     IPLOT > q                     # to quit looping and return to python
-    >>> ip.plotloop()             # to restart looping at previous frame
+    >>> ip.plotloop()             # to restart looping at previous frame    # doctest: +SKIP
 
     Arguments:
     ----------
@@ -87,8 +87,8 @@ class Iplot(cmd.Cmd):
  
 
     def preloop(self):
-        print '\nInteractive plotting... '
-        print 'Type ? at IPLOT prompt for list of commands'
+        print('\nInteractive plotting... ')
+        print('Type ? at IPLOT prompt for list of commands')
 
         startframeno = raw_input('\n    Start at which frame [default=%i] ? '\
                                 % self.prevframeno)
@@ -113,7 +113,7 @@ class Iplot(cmd.Cmd):
             try:
                 self.frameno = int(startframeno)
             except ValueError:
-                print '\n    *** Error: frameno must be an integer, resetting to 0'
+                print('\n    *** Error: frameno must be an integer, resetting to 0')
                 self.frameno = 0
 
         if makeplot:
@@ -135,7 +135,7 @@ class Iplot(cmd.Cmd):
     # help command:
     # -------------
     def help_help(self):
-        print 'print this list of valid commands\n'
+        print('print this list of valid commands\n')
 
     # next frame:
     # -----------
@@ -143,7 +143,7 @@ class Iplot(cmd.Cmd):
         self.frameno = self.frameno+1
         self.plot_frame(self.frameno)
     def help_n(self):
-        print 'n: advance to next frame\n'
+        print('n: advance to next frame\n')
 
     # previous frame:
     # ---------------
@@ -151,7 +151,7 @@ class Iplot(cmd.Cmd):
         self.frameno = max(self.frameno-1, 0)
         self.plot_frame(self.frameno)
     def help_p(self):
-        print 'p: go back to previous frame\n'
+        print('p: go back to previous frame\n')
 
     # jump to arbitrary frame:
     # ------------------------
@@ -170,54 +170,54 @@ class Iplot(cmd.Cmd):
             try:
                 newframeno = int(newframeno)
             except ValueError:
-                print '\n    *** Error: frameno must be an integer, n, or p'
+                print('\n    *** Error: frameno must be an integer, n, or p')
             self.frameno = newframeno
             self.plot_frame(self.frameno)
     def help_j(self):
-        print 'j N: jump to frame N\n'
-        print 'j:   jump to some other frame (will prompt for N)\n'
+        print('j N: jump to frame N\n')
+        print('j:   jump to some other frame (will prompt for N)\n')
 
     # redraw frame:
     # -------------
     def do_r(self, rest):
         self.plot_frame(self.frameno)
     def help_r(self):
-        print 'r: redraw the current frame,  rr: reload and redraw\n'
+        print('r: redraw the current frame,  rr: reload and redraw\n')
 
     def do_rr(self, rest):
         try:
             self.frames.pop(str(self.frameno))
-            print 'Cleared data for frame ',self.frameno
+            print('Cleared data for frame ',self.frameno)
         except KeyError:
-           print 'No frame data to clear for frame ',self.frameno
+           print('No frame data to clear for frame ',self.frameno)
         self.plot_frame(self.frameno)
     def help_rr(self):
-        print 'r: redraw the current frame,  rr: reload and redraw\n'
+        print('r: redraw the current frame,  rr: reload and redraw\n')
 
     # clearframes
     # ---------
     def do_clearframes(self, rest):
         if rest=='':
             self.frames.clear()
-            print 'Cleared all frames'
+            print('Cleared all frames')
         else:
             for framestr in rest.split():
                 try:
                     frameno = int(framestr)
                 except ValueError:
-                    print 'Error in clearframes: unrecognized input'
+                    print('Error in clearframes: unrecognized input')
                 popped_frame = self.frames.pop(str(frameno),None)
                 if popped_frame is None:
-                   print 'No frame data to clear for frame ',frameno
+                   print('No frame data to clear for frame ',frameno)
                 else:
-                   print 'Cleared data for frame ',frameno
+                   print('Cleared data for frame ',frameno)
 
     def help_clearframes(self):
-        print 'clearframes: delete frame data from cache to replot'
-        print '    use if you have rerun the code and want to plot the'
-        print '    latest results'
-        print '          clearframes framenos  clears one or more frames'
-        print '          clearframes           clears all frames'
+        print('clearframes: delete frame data from cache to replot')
+        print('    use if you have rerun the code and want to plot the')
+        print('    latest results')
+        print('          clearframes framenos  clears one or more frames')
+        print('          clearframes           clears all frames')
 
 
     # save
@@ -228,30 +228,30 @@ class Iplot(cmd.Cmd):
             try:
                 figno = int(rest[0])
             except ValueError:
-                print "*** Expected figure number, got: ",rest[0]
+                print("*** Expected figure number, got: ",rest[0])
             fname = rest[1]
             plt.figure(figno)
             try:
                 plt.savefig(fname)
-                print "Saved figure number %s to file %s" % (figno,fname)
+                print("Saved figure number %s to file %s" % (figno,fname))
             except ValueError:
-                print "Don't put quotes around the filename."
+                print("Don't put quotes around the filename.")
         else:
-            print "*** save requires two arguments: figno, fname"
-            print "*** got: ",rest
+            print("*** save requires two arguments: figno, fname")
+            print("*** got: ",rest)
 
     def help_save(self):
-        print 'save figno fname: save figure figno to file fname using savefig.'
+        print('save figno fname: save figure figno to file fname using savefig.')
 
 
     # print working directory:
     # ------------------------
     def do_pwd(self, rest):
-        print '  now in directory: ',os.getcwd()
-        print '  data from outdir: ',self.plotdata.outdir
+        print('  now in directory: ',os.getcwd())
+        print('  data from outdir: ',self.plotdata.outdir)
     def help_pwd(self):
-        print 'pwd: print current working directory and outdir'
-        print '     fort.* files in outdir provide frame data\n'
+        print('pwd: print current working directory and outdir')
+        print('     fort.* files in outdir provide frame data\n')
 
 
     # print figure to a file:
@@ -266,15 +266,15 @@ class Iplot(cmd.Cmd):
                 name = fname.split('.')[0]+string.zfill(figno,4)+'.'+fname.split('.')[1]
                 plt.savefig(name)
             else:
-                print 'You must specify a file name.'
+                print('You must specify a file name.')
 
     def help_print(self):
-        print 'print: print all figures for this frame to files of the form'
-        print '      frame000NfigJ.png'
-        print 'To print a single figure or with different style, try e.g.'
-        print '     IPLOT > q'
-        print '     figure(2)'
-        print '     savefig("myname.jpg")\n'
+        print('print: print all figures for this frame to files of the form')
+        print('      frame000NfigJ.png')
+        print('To print a single figure or with different style, try e.g.')
+        print('     IPLOT > q')
+        print('     figure(2)')
+        print('     savefig("myname.jpg")\n')
         
 
     # use vi e.g. to edit setplot.py:
@@ -282,13 +282,13 @@ class Iplot(cmd.Cmd):
     def do_vi(self, rest):
         exitcode = os.system('vi %s' % rest)
         if exitcode != 0:
-            print '*** System vi command failed.  Try "help edit"'
+            print('*** System vi command failed.  Try "help edit"')
 
     def help_vi(self):
-        print 'Edit file using vi, for example to change the plot parameters:'
-        print '    IPLOT> vi setplot.py '
-        print '    IPLOT> resetplot '
-        print 'See also "help edit" for use of other editors.\n'
+        print('Edit file using vi, for example to change the plot parameters:')
+        print('    IPLOT> vi setplot.py ')
+        print('    IPLOT> resetplot ')
+        print('See also "help edit" for use of other editors.\n')
         
 
     # edit a file using editor specified by environment variable EDITOR:
@@ -298,43 +298,43 @@ class Iplot(cmd.Cmd):
             editor = os.environ['EDITOR']
             eval("os.system('%s %s')" % (editor,rest))
         except:
-            print '*** Environment variable EDITOR not set... '
-            print '*** Type "help edit" for more info'
+            print('*** Environment variable EDITOR not set... ')
+            print('*** Type "help edit" for more info')
 
     def help_edit(self):
-        print 'Edit file, for example to change the plot parameters:'
-        print '    IPLOT> edit setplot.py '
-        print '    IPLOT> resetplot '
-        print 'Specify the editor by setting environment variable EDITOR'
-        print '  before starting Python shell.'
-        print 'If you want to use vi, see also "help vi".\n'
+        print('Edit file, for example to change the plot parameters:')
+        print('    IPLOT> edit setplot.py ')
+        print('    IPLOT> resetplot ')
+        print('Specify the editor by setting environment variable EDITOR')
+        print('  before starting Python shell.')
+        print('If you want to use vi, see also "help vi".\n')
 
         
     # quit commands:
     # --------------
     def do_quit(self, rest):
-        print 'quitting...'
+        print('quitting...')
         return True
     def help_quit(self):
-        print 'q or quit: terminates the command loop\n'
+        print('q or quit: terminates the command loop\n')
         
     def do_q(self, rest):
-        print 'quitting...'
+        print('quitting...')
         return True
     def help_q(self):
-        print 'q or quit: terminates the command loop\n'
+        print('q or quit: terminates the command loop\n')
         
     def do_k(self, rest):
-        print 'quitting...'
+        print('quitting...')
         return True
     def help_k(self):
-        print 'k: terminates the command loop\n'
+        print('k: terminates the command loop\n')
         
     def do_EOF(self, rest):
-        print "quitting..."
+        print("quitting...")
         return True
     def help_EOF(self):
-        print "Terminates the command loop\n"
+        print("Terminates the command loop\n")
         
     # alias plotloop = cmdloop:
     # -------------------------
