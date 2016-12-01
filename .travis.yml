@@ -20,7 +20,7 @@ install:
 
 script:
   - cd $HOME/build/ketch/griddle
-  - python tests.py -v --with-coverage --cover-package=griddle;
+  - python tests.py -v --with-coverage --cover-package=griddle --with-doctest;
 
 after_success:
   - coveralls
