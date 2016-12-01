@@ -15,6 +15,20 @@ class TimeSeries(dict):
         For now, it is assumed that frames are numbered from 0 to N and that
         all frames exist.  This could be made more general by modifying
         `list_frames` and `_get_num_data_files`.
+
+        A TimeSeries can be initialized simply by providing a path
+        to a set of output files:
+
+            >>> import griddle
+            >>> ts = griddle.data.TimeSeries('./test_data/_pyclaw_3d_shocktube/')
+
+        The TimeSeries will automatically determine the data format
+        and the number of frames in the series based on the files present:
+
+            >>> ts.list_frames
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+            >>> ts._data_format
+            'hdf5'
     """
     @property
     def list_frames(self):
@@ -99,3 +113,7 @@ file_substrings = { #should be 'extensions'
         'hdf5'  : 'hdf',
         'petsc' : 'ptc'
         }
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()

@@ -10,7 +10,6 @@ import warnings
 import six
 from six.moves import range
 from six.moves import zip
-deprec_message = "'edges' has been deprecated; please use 'nodes' instead."
 # ============================================================================
 #  Default function definitions
 # ============================================================================
@@ -143,6 +142,8 @@ class Grid(object):
         [array([ 0.1,  0.3,  0.5,  0.7,  0.9])]
         >>> grid1d.c_nodes
         [array([ 0. ,  0.2,  0.4,  0.6,  0.8,  1. ])]
+        >>> grid1d.c_nodes_with_ghost(2)
+        [array([-0.4, -0.2,  0. ,  0.2,  0.4,  0.6,  0.8,  1. ,  1.2,  1.4])]
 
     """
 
@@ -245,6 +246,8 @@ class Grid(object):
             self.add_dimension(dim)
 
         super(Grid,self).__init__()
+
+        self._check_validity()
     
     def _clear_cached_values(self):
         self._p_centers = None
@@ -395,62 +398,8 @@ class Grid(object):
     def p_nodes_with_ghost(self,num_ghost):
         return self.mapc2p(*self.c_nodes_with_ghost(num_ghost))
 
-    # ========================================================================
-    # Edges: deprecated; will be removed in 6.0
-    @property
-    def c_edges(self):
-        warnings.warn(deprec_message)
-        return self.c_nodes
-    @property
-    def p_edges(self):
-        warnings.warn(deprec_message)
-        return self.p_nodes
-    def p_edges_with_ghost(self,num_ghost):
-        warnings.warn(deprec_message)
-        return self.p_nodes_with_ghost(num_ghost)
-    def c_edges_with_ghost(self, num_ghost):
-        warnings.warn(deprec_message)
-        return self.c_nodes_with_ghost(num_ghost)
-    # ========================================================================
 
-
-    # ========================================================================
-    #  Gauges
-    # ========================================================================
-    def add_gauges(self,gauge_coords):
-        r"""
-        Determine the cell indices of each gauge and make a list of all gauges
-        with their cell indices.  
-        """
-        for gauge in gauge_coords: 
-            # Check if gauge belongs to this grid:
-            if all(self.lower[n]<=gauge[n]<self.upper[n] for n in range(self.num_dim)):
-                # Set indices relative to this grid
-                gauge_index = [int(round((gauge[n]-self.lower[n])/self.delta[n])) 
-                               for n in range(self.num_dim)]
-                gauge_file_name = 'gauge'+'_'.join(str(coord) for coord in gauge)+'.txt'
-                self.gauge_file_names.append(gauge_file_name)
-                self.gauges.append(gauge_index)
-
-    def setup_gauge_files(self,outdir):
-        r"""
-        Creates and opens file objects for gauges.
-        """
-        import os
-        gauge_path = os.path.join(outdir,self.gauge_dir_name)
-        if not os.path.exists(gauge_path):
-            try:
-                os.makedirs(gauge_path)
-            except OSError:
-                print("gauge directory already exists, ignoring")
-        
-        for gauge in self.gauge_file_names: 
-            gauge_file = os.path.join(gauge_path,gauge)
-            if os.path.isfile(gauge_file): 
-                 os.remove(gauge_file)
-            self.gauge_files.append(open(gauge_file,'a'))
-
-    def plot(self,num_ghost=0,mapped=True,mark_nodes=False,mark_centers=False):
+    def plot(self,num_ghost=0,mapped=True,mark_nodes=False,mark_centers=False,ax=None):
         r"""Make a plot of the grid.
 
         By default the plot uses the mapping
@@ -461,7 +410,8 @@ class Grid(object):
         """
         import matplotlib.pyplot as plt
         if self.num_dim == 2:
-            fig, ax = plt.subplots(1,1)
+            if ax is None:
+                fig, ax = plt.subplots(1,1)
             if num_ghost>0:
                 if mapped:
                     xe, ye = self.p_nodes_with_ghost(num_ghost)
@@ -491,11 +441,6 @@ class Grid(object):
     def _check_validity(self):
         for dim in self.dimensions:
             dim._check_validity()
-        assert type(self.num_cells) is int, 'Dimension.num_cells must be an integer'
-        assert type(self.lower) is float, 'Dimension.lower must be a float'
-        assert type(self.upper) is float, 'Dimension.upper must be a float'
-        assert self.num_cells>0, 'Dimension.num_cells must be positive'
-        assert self.upper > self.lower, 'Dimension.upper must be greater than lower'
 
   
 # ============================================================================
@@ -549,17 +494,6 @@ class Dimension(object):
     def delta(self):
         r"""(float) - Size of an individual, computational cell"""
         return (self.upper-self.lower) / float(self.num_cells)
-
-    # ========== Edges: deprecated; will be removed in 6.0 =======
-    @property
-    def edges(self):
-        warnings.warn(deprec_message)
-        return self.nodes
-
-    def edges_with_ghost(self,num_ghost):
-        warnings.warn(deprec_message)
-        return self.nodes_with_ghost(num_ghost)
-    # ========================================================================
 
 
     # ========== Centers and nodes ========================================
