@@ -10,7 +10,7 @@ from nose import SkipTest
 # ===================================
 # Setup functions
 def set_up_solution():
-    x = pyclaw.Dimension(0.,1.,100)
+    x = griddle.Dimension(0.,1.,100)
     g = pyclaw.geometry.Patch([x])
     s = pyclaw.State(g,num_eqn=2)
     d = pyclaw.Domain(g)
@@ -32,8 +32,13 @@ def run_pyclaw_2d():
     claw.run()
     return claw
 
-def set_up_mapped_grid():
+def set_up_grid():
+    x = griddle.Dimension(-1.,1.,12, name='x')
+    y = griddle.Dimension(-1.,1.,10, name='y')
+    grid = griddle.geometry.Grid((x,y))
+    return grid
 
+def set_up_mapped_grid():
     def square2circle(xc,yc,r1=1.0):
         d = np.maximum(np.abs(xc),np.abs(yc))
         r = np.sqrt(xc**2 + yc**2)
@@ -42,15 +47,20 @@ def set_up_mapped_grid():
         yp = r1 * d * yc/r
         return [xp, yp]
 
-    x = griddle.Dimension(-1.,1.,12, name='x')
-    y = griddle.Dimension(-1.,1.,10, name='y')
-    grid = griddle.geometry.Grid((x,y))
+    grid = set_up_grid()
     grid.mapc2p = square2circle
     return grid
 # ===================================
 
 # ===================================
 # Test functions
+@image_comparison(baseline_images=['grid'],extensions=['png'])
+def test_plot_grid():
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    grid = set_up_grid()
+    grid.plot(num_ghost=1, ax=ax, mark_nodes=True, mark_centers=True);
+
 @image_comparison(baseline_images=['mapped_grid'],extensions=['png'])
 def test_plot_mapped_grid():
     fig = plt.figure()

@@ -246,6 +246,8 @@ class Grid(object):
             self.add_dimension(dim)
 
         super(Grid,self).__init__()
+
+        self._check_validity()
     
     def _clear_cached_values(self):
         self._p_centers = None
@@ -439,11 +441,6 @@ class Grid(object):
     def _check_validity(self):
         for dim in self.dimensions:
             dim._check_validity()
-        assert type(self.num_cells) is int, 'Dimension.num_cells must be an integer'
-        assert type(self.lower) is float, 'Dimension.lower must be a float'
-        assert type(self.upper) is float, 'Dimension.upper must be a float'
-        assert self.num_cells>0, 'Dimension.num_cells must be positive'
-        assert self.upper > self.lower, 'Dimension.upper must be greater than lower'
 
   
 # ============================================================================
