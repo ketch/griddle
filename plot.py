@@ -122,7 +122,7 @@ def plot_item_frame(plot_item,frame_num):
             xc = centers[0]
             plot_objects[i] = axes.fill_between(xc,q[0],q[1],**plot_args)
         elif plot_type == 'pcolor':
-            xe, ye = state.grid.p_edges
+            xe, ye = state.grid.p_nodes
             plot_objects[i] = axes.pcolormesh(xe, ye, q, vmin=zmin, \
                                               vmax=zmax, shading='flat', \
                                               zorder=state.patch.level, \
