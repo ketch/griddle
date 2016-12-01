@@ -1,6 +1,7 @@
 language: python
 python:
   - "2.7"
+  - "3.5"
 
 before_install:
   - pip install coverage
@@ -20,7 +21,7 @@ install:
 
 script:
   - cd $HOME/build/ketch/griddle
-  - python tests.py -v --with-coverage --cover-package=griddle --with-doctest;
+  - python tests.py -v --with-coverage --cover-package=griddle --with-doctest --cover-min-percentage=74;
 
 after_success:
   - coveralls
