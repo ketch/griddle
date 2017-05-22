@@ -3,7 +3,7 @@ import os
 
 class TimeSeries(dict):
     r"""A TimeSeries represents a time series of Solution objects.
-        
+
         It is a dictionary whose keys are frame numbers and whose values
         are the corresponding frames (solutions).  The dictionary entries
         are populated only when actually requested.  The GDS knows how to
@@ -66,14 +66,14 @@ class TimeSeries(dict):
                 self._data_format = _get_data_format(self._data_path)
             else:
                 self._data_format = file_format
-            self._get_frame = lambda frame_num : \
+            self._get_frame = lambda frame_num: \
                                       pyclaw.Solution(frame_num,
-                                          path=self._data_path,
-                                          file_format=self._data_format)
+                                                      path=self._data_path,
+                                                      file_format=self._data_format)
         elif hasattr(path_or_list, '__getitem__'):
             # It's a list of frames
             self._frame_list = path_or_list
-            self._get_frame = lambda frame_num : self._frame_list[frame_num]
+            self._get_frame = lambda frame_num: self._frame_list[frame_num]
         else:
             raise Exception('TimeSeries must be initialized \
                     with a path or list of frames.')
@@ -108,11 +108,10 @@ def _get_data_format(path):
                         data directory.  Which do you wish to use?
                         """+file_types_present)
 
-file_substrings = { #should be 'extensions'
-        'ascii' : 'fort.q',
-        'hdf5'  : 'hdf',
-        'petsc' : 'ptc'
-        }
+
+file_substrings = {'ascii': 'fort.q',  # should be 'extensions'
+                   'hdf5': 'hdf',
+                   'petsc': 'ptc'}
 
 if __name__ == "__main__":
     import doctest
