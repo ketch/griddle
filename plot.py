@@ -244,7 +244,7 @@ def make_plot_gallery(plot_path='./_plots'):
                          ('Clawpack', 'http://clawpack.github.io')]
     gal = Gallery(settings)
     gal.build()
-    print 'Open your browser to ./_build/index.html'
+    print('Open your browser to ./_build/index.html')
 
 
 def _get_field_values_on_all_patches(state,field):

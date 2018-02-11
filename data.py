@@ -51,7 +51,7 @@ class TimeSeries(dict):
                 self[key] = self._get_frame(int(key))
                 return dict.__getitem__(self, key)
             except:
-                print 'Frame %s does not exist' % key
+                print('Frame %s does not exist' % key)
 
     def __init__(self,path_or_list,file_format=None):
         """Set up the function _get_frame, which loads individual
@@ -97,7 +97,7 @@ def _get_data_format(path):
     """
     files = os.listdir(path)
     file_types_present = []
-    for file_type, string in file_substrings.iteritems():
+    for file_type, string in file_substrings.items():
         if any([string in filename for filename in files]):
             file_types_present.append(file_type)
 

@@ -21,7 +21,7 @@ class test_patch_properties(unittest.TestCase):
         assert len(g.dimensions) == 1
         assert g.delta == [0.01]
         g2 = g.__deepcopy__()
-        print g
+        print(g)
 
     def test_cant_add_same_dim(self):
         x = griddle.Dimension(0.,1.,100)
