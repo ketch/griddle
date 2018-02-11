@@ -33,10 +33,10 @@ class TimeSeries(dict):
     @property
     def list_frames(self):
         if hasattr(self,'_frame_list'):
-            return range(len(self._frame_list))
+            return list(range(len(self._frame_list)))
         else:
             # Maybe we should get the actual file indices instead
-            return range(_get_num_data_files(self._data_path,self._data_format))
+            return list(range(_get_num_data_files(self._data_path,self._data_format)))
 
     def __getitem__(self, key):
         """Accept either integers or strings as keys.

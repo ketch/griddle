@@ -73,10 +73,10 @@ def test_plot_item():
     fig  = plt.figure(figsize=(8,6),dpi=100)
     ax   = fig.add_subplot(111)
     sol  = set_up_solution()
-    item = {'frames' : griddle.data.TimeSeries([sol]),
-            'axes' : ax,
-            'field' : 0,
-            'plot_type' : 'line'}
+    item = {'frames': griddle.data.TimeSeries([sol]),
+            'axes': ax,
+            'field': 0,
+            'plot_type': 'line'}
     line, = griddle.plot_item_frame(item,0)
     assert type(line) == matplotlib.lines.Line2D
     assert line.get_data()[0].shape == (100,)
@@ -86,11 +86,11 @@ def test_animation():
     fig1 = plt.figure()
     ax1 = fig1.add_subplot(211)
     ax2 = fig1.add_subplot(212)
-    item1 = {'data' : claw.frames,
-             'field' : 0,
-             'axes' : ax1,
-             'plot_args' : {'ls' : '--', 'color' : 'green'}}
-    item2 = {'data' : claw.frames, 'field' : 1, 'axes' : ax2}
+    item1 = {'data': claw.frames,
+             'field': 0,
+             'axes': ax1,
+             'plot_args': {'ls': '--', 'color': 'green'}}
+    item2 = {'data': claw.frames, 'field': 1, 'axes': ax2}
     plotitems = [item1,item2]
     animation = griddle.animate(plotitems)
 
@@ -98,7 +98,7 @@ def test_iplot():
     claw = run_pyclaw_1d()
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
-    plot_spec = [{'data' : claw.frames, 'field' : 0, 'axes' : ax1}]
+    plot_spec = [{'data': claw.frames, 'field': 0, 'axes': ax1}]
     ip = griddle.Iplot(plot_spec)
 
 def test_gallery():
@@ -107,13 +107,13 @@ def test_gallery():
     fig2 = plt.figure()
     ax1 = fig1.add_subplot(111)
     ax2 = fig2.add_subplot(111)
-    item1 = {'data' : claw.frames,
-             'field' : 0,
-             'axes' : ax1,
-             'plot_args' : {'ls' : '--', 'color' : 'green'}}
-    item2 = {'data' : claw.frames,
-             'field' : 1,
-             'axes' : ax2}
+    item1 = {'data': claw.frames,
+             'field': 0,
+             'axes': ax1,
+             'plot_args': {'ls': '--', 'color': 'green'}}
+    item2 = {'data': claw.frames,
+             'field': 1,
+             'axes': ax2}
     plot_spec = [item1, item2]
     griddle.write_plots(plot_spec)
     griddle.make_plot_gallery()
@@ -123,9 +123,9 @@ def test_pcolor():
     claw = run_pyclaw_2d()
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    plot_spec = [{'data' : claw.frames,
-                  'axes' : ax,
-                  'field' : 0}]
+    plot_spec = [{'data': claw.frames,
+                  'axes': ax,
+                  'field': 0}]
     plot_object = griddle.plot_frame(plot_spec)
     assert type(plot_object[0][0]) is matplotlib.collections.QuadMesh
 
@@ -148,18 +148,18 @@ def test_fill_between():
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    water = {'data' : claw.frames,
-             'field' : (bathymetry,surface),
-             'name' : 'depth',
-             'axes' : ax,
-             'plot_type' : 'fill_between'}
-    land = {'data' : claw.frames,
-             'field' : (bathymetry, bottom),
-             'name' : 'bathy',
-             'axes' : ax,
-             'plot_type' : 'fill_between',
-             'plot_args' : {'color' : 'brown',
-                            'edgecolor' : 'k'}}
+    water = {'data': claw.frames,
+             'field': (bathymetry,surface),
+             'name': 'depth',
+             'axes': ax,
+             'plot_type': 'fill_between'}
+    land = {'data': claw.frames,
+             'field': (bathymetry, bottom),
+             'name': 'bathy',
+             'axes': ax,
+             'plot_type': 'fill_between',
+             'plot_args': {'color': 'brown',
+                            'edgecolor': 'k'}}
     griddle.animate([water,land])
 
 def test_read_data():
@@ -169,10 +169,10 @@ def test_read_data():
 def test_amr_plotting():
     fig = plt.figure(figsize=(10,10))
     ax = fig.add_subplot(111)
-    item5 = {'data_path' : './test_data/_amrclaw_2d_acoustics/',
-             'field' : 0,
-             'show_patch_boundaries' : True,
-             'axes' : ax}
+    item5 = {'data_path': './test_data/_amrclaw_2d_acoustics/',
+             'field': 0,
+             'show_patch_boundaries': True,
+             'axes': ax}
     plot_spec = [item5]
     plot_objects = griddle.plot_frame(plot_spec,frame_num=5);
     assert len(plot_objects[0]) == 20
@@ -183,11 +183,11 @@ def test_yt_slice_plot():
         import yt
     except:
         raise SkipTest("yt import failed; skipping yt test.")
-    plot_spec = [{'data_path' : './test_data/_pyclaw_3d_shocktube',
-                  'field' : 'Density',
-                  'plot_args' : {'normal' : 'z',
-                                'origin'  : "native",
-                                'center' : [1., 0.25, 0.]}}]
+    plot_spec = [{'data_path': './test_data/_pyclaw_3d_shocktube',
+                  'field': 'Density',
+                  'plot_args': {'normal': 'z',
+                                'origin': "native",
+                                'center': [1., 0.25, 0.]}}]
     plot_objects = griddle.plot_frame(plot_spec)
     assert type(plot_objects[0][0]) is yt.visualization.plot_window.AxisAlignedSlicePlot
 # ===================================
