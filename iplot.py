@@ -1,7 +1,7 @@
 """
 Module Iplot for interactive plotting.
 
-For more instructions see the Usage notes in class Iplot below. 
+For more instructions see the Usage notes in class Iplot below.
 
 For options during looping type:
   >>> ip = iplot()    # doctest: +SKIP
@@ -9,12 +9,13 @@ For options during looping type:
   IPLOT> help
 """
 
-import cmd, os
+import cmd
+import os
 import matplotlib
-matplotlib.rc('text', usetex=False)
-matplotlib.interactive(True)
 import matplotlib.pyplot as plt
 import griddle
+matplotlib.rc('text', usetex=False)
+matplotlib.interactive(True)
 
 
 class Iplot(cmd.Cmd):
@@ -52,7 +53,7 @@ class Iplot(cmd.Cmd):
     prompt = 'IPLOT > '
     lastcmd = 'n'             # initialize so <return> advances frame'
 
-    def __init__(self, plot_spec,\
+    def __init__(self, plot_spec,
                  completekey='tab', stdin=None, stdout=None):
         """Instantiate a line-oriented interpreter framework."""
 
@@ -68,7 +69,7 @@ class Iplot(cmd.Cmd):
             self.stdout = sys.stdout
         self.cmdqueue = []
         self.completekey = completekey
- 
+
         for item in plot_spec:
             griddle.plot._set_up_time_series(item)
         self.plot_spec = plot_spec
@@ -81,32 +82,31 @@ class Iplot(cmd.Cmd):
     def plot_frame(self,frame):
         plot_objects = griddle.plot_frame(self.plot_spec,frame)
         figures = [obj[0].figure for obj in plot_objects]
-        figures = list(set(figures)) # Discard duplicates
+        figures = list(set(figures))  # Discard duplicates
         for figure in figures:
             figure.canvas.draw()
- 
 
     def preloop(self):
         print('\nInteractive plotting... ')
         print('Type ? at IPLOT prompt for list of commands')
 
-        startframeno = raw_input('\n    Start at which frame [default=%i] ? '\
-                                % self.prevframeno)
+        startframeno = raw_input('\n    Start at which frame [default=%i] ? '
+                                 % self.prevframeno)
 
-        makeplot = True 
+        makeplot = True
 
         if startframeno == '':
             self.frameno = self.prevframeno
             if self.restart:
-                replot = raw_input('    Replot data for frame %s [no] ? ' \
-                                % self.frameno)
+                replot = raw_input('    Replot data for frame %s [no] ? '
+                                   % self.frameno)
 
                 if replot not in ('y','yes','Y'):
                     makeplot = False
 
                 if makeplot:
-                    reload = raw_input('    Reload data for frame %s [no] ? ' \
-                                    % self.frameno)
+                    reload = raw_input('    Reload data for frame %s [no] ? '
+                                       % self.frameno)
                     if reload in ('y','yes','Y'):
                         self.frames.pop(str(self.frameno))
         else:
@@ -120,14 +120,13 @@ class Iplot(cmd.Cmd):
             self.plot_frame(self.frameno)
 
         self.lastcmd = 'n'
-        self.restart = True 
+        self.restart = True
 
-    # end of initialization 
+    # end of initialization
     # ---------------------
 
     def postloop(self):
         self.prevframeno = self.frameno
-
 
     # Commands that can be typed at the IPLOT> prompt:
     # ---------------------------------------------------
@@ -142,6 +141,7 @@ class Iplot(cmd.Cmd):
     def do_n(self, rest):
         self.frameno = self.frameno+1
         self.plot_frame(self.frameno)
+
     def help_n(self):
         print('n: advance to next frame\n')
 
@@ -150,6 +150,7 @@ class Iplot(cmd.Cmd):
     def do_p(self, rest):
         self.frameno = max(self.frameno-1, 0)
         self.plot_frame(self.frameno)
+
     def help_p(self):
         print('p: go back to previous frame\n')
 
@@ -160,10 +161,10 @@ class Iplot(cmd.Cmd):
             newframeno = int(rest)
         except:
             newframeno = raw_input('\n    Jump to which frame? ')
-        if newframeno == 'n': 
+        if newframeno == 'n':
             self.do_n(rest)
             self.lastcmd = 'n'
-        elif newframeno == 'p': 
+        elif newframeno == 'p':
             self.do_p(rest)
             self.lastcmd = 'p'
         else:
@@ -173,6 +174,7 @@ class Iplot(cmd.Cmd):
                 print('\n    *** Error: frameno must be an integer, n, or p')
             self.frameno = newframeno
             self.plot_frame(self.frameno)
+
     def help_j(self):
         print('j N: jump to frame N\n')
         print('j:   jump to some other frame (will prompt for N)\n')
@@ -181,6 +183,7 @@ class Iplot(cmd.Cmd):
     # -------------
     def do_r(self, rest):
         self.plot_frame(self.frameno)
+
     def help_r(self):
         print('r: redraw the current frame,  rr: reload and redraw\n')
 
@@ -189,8 +192,9 @@ class Iplot(cmd.Cmd):
             self.frames.pop(str(self.frameno))
             print('Cleared data for frame ',self.frameno)
         except KeyError:
-           print('No frame data to clear for frame ',self.frameno)
+            print('No frame data to clear for frame ',self.frameno)
         self.plot_frame(self.frameno)
+
     def help_rr(self):
         print('r: redraw the current frame,  rr: reload and redraw\n')
 
@@ -208,9 +212,9 @@ class Iplot(cmd.Cmd):
                     print('Error in clearframes: unrecognized input')
                 popped_frame = self.frames.pop(str(frameno),None)
                 if popped_frame is None:
-                   print('No frame data to clear for frame ',frameno)
+                    print('No frame data to clear for frame ',frameno)
                 else:
-                   print('Cleared data for frame ',frameno)
+                    print('Cleared data for frame ',frameno)
 
     def help_clearframes(self):
         print('clearframes: delete frame data from cache to replot')
@@ -218,7 +222,6 @@ class Iplot(cmd.Cmd):
         print('    latest results')
         print('          clearframes framenos  clears one or more frames')
         print('          clearframes           clears all frames')
-
 
     # save
     # ---------
@@ -243,16 +246,15 @@ class Iplot(cmd.Cmd):
     def help_save(self):
         print('save figno fname: save figure figno to file fname using savefig.')
 
-
     # print working directory:
     # ------------------------
     def do_pwd(self, rest):
         print('  now in directory: ',os.getcwd())
         print('  data from outdir: ',self.plotdata.outdir)
+
     def help_pwd(self):
         print('pwd: print current working directory and outdir')
         print('     fort.* files in outdir provide frame data\n')
-
 
     # print figure to a file:
     # -----------------------
@@ -275,7 +277,6 @@ class Iplot(cmd.Cmd):
         print('     IPLOT > q')
         print('     figure(2)')
         print('     savefig("myname.jpg")\n')
-        
 
     # use vi e.g. to edit setplot.py:
     # -------------------------------
@@ -289,7 +290,6 @@ class Iplot(cmd.Cmd):
         print('    IPLOT> vi setplot.py ')
         print('    IPLOT> resetplot ')
         print('See also "help edit" for use of other editors.\n')
-        
 
     # edit a file using editor specified by environment variable EDITOR:
     # -----------------------------------------------------------------
@@ -309,33 +309,36 @@ class Iplot(cmd.Cmd):
         print('  before starting Python shell.')
         print('If you want to use vi, see also "help vi".\n')
 
-        
     # quit commands:
     # --------------
     def do_quit(self, rest):
         print('quitting...')
         return True
+
     def help_quit(self):
         print('q or quit: terminates the command loop\n')
-        
+
     def do_q(self, rest):
         print('quitting...')
         return True
+
     def help_q(self):
         print('q or quit: terminates the command loop\n')
-        
+
     def do_k(self, rest):
         print('quitting...')
         return True
+
     def help_k(self):
         print('k: terminates the command loop\n')
-        
+
     def do_EOF(self, rest):
         print("quitting...")
         return True
+
     def help_EOF(self):
         print("Terminates the command loop\n")
-        
+
     # alias plotloop = cmdloop:
     # -------------------------
     def plotloop(self):

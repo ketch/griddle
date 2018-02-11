@@ -6,7 +6,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 import numpy as np
 
-import warnings
 import six
 from six.moves import range
 from six.moves import zip
@@ -24,31 +23,32 @@ def identity_map_2d(x,y):
 def identity_map_3d(x,y,z):
     return x,y,z
 
-identity_map={'1' : identity_map_1d,
-              '2' : identity_map_2d,
-              '3' : identity_map_3d}
+
+identity_map={'1': identity_map_1d,
+              '2': identity_map_2d,
+              '3': identity_map_3d}
 
 class Grid(object):
     r"""
     Representation of a single grid.
-    
+
     :Dimension information:
-    
+
         Each dimension has an associated name with it that can be accessed via
         that name such as ``grid.x.num_cells`` which would access the x dimension's
         number of cells.
-    
+
     :Properties:
 
         If the requested property has multiple values, a list will be returned
         with the corresponding property belonging to the dimensions in order.
-         
+
     :Initialization:
-    
+
         Input:
-         - *dimensions* - (list of :class:`Dimension`) Dimensions that are to 
+         - *dimensions* - (list of :class:`Dimension`) Dimensions that are to
            be associated with this grid
-            
+
         Output:
          - (:class:`grid`) Initialized grid object
 
@@ -111,7 +111,7 @@ class Grid(object):
         (array([ 0.1,  0.3,  0.5,  0.7,  0.9]),)
         >>> grid1d.p_centers_with_ghost(2)
         (array([-0.3, -0.1,  0.1,  0.3,  0.5,  0.7,  0.9,  1.1,  1.3]),)
-        
+
     Mappings
     ========
     A grid mapping can be used to solve in a domain that is not rectangular,
@@ -162,11 +162,13 @@ class Grid(object):
     def num_dim(self):
         r"""(int) - Number of dimensions"""
         return len(self._dimensions)
+
     @property
     def dimensions(self):
-        r"""(list) - List of :class:`Dimension` objects defining the 
+        r"""(list) - List of :class:`Dimension` objects defining the
                 grid's extent and resolution"""
         return [getattr(self,name) for name in self._dimensions]
+
     @property
     def c_centers(self):
         r"""(list of ndarray(...)) - List containing the arrays locating
@@ -174,6 +176,7 @@ class Grid(object):
                   :meth:`_compute_c_centers` for more info."""
         self._compute_c_centers()
         return self._c_centers
+
     @property
     def c_nodes(self):
         r"""(list of ndarray(...)) - List containing the arrays locating
@@ -181,6 +184,7 @@ class Grid(object):
                   :meth:`_compute_c_nodes` for more info."""
         self._compute_c_nodes()
         return self._c_nodes
+
     @property
     def p_centers(self):
         r"""(list of ndarray(...)) - List containing the arrays locating
@@ -188,6 +192,7 @@ class Grid(object):
                   :meth:`_compute_p_centers` for more info."""
         self._compute_p_centers()
         return self._p_centers
+
     @property
     def p_nodes(self):
         r"""(list of ndarray(...)) - List containing the arrays locating
@@ -195,29 +200,24 @@ class Grid(object):
                   :meth:`_compute_p_nodes` for more info."""
         self._compute_p_nodes()
         return self._p_nodes
+
     @property
     def mapc2p(self):
         return self._mapc2p
+
     @mapc2p.setter
     def mapc2p(self,mapc2p):
-        import inspect
-        first_arg_name = inspect.getargspec(mapc2p)[0][0]
-        if first_arg_name.lower() == 'grid':
-            warnings.warn("""The required signature for the mapc2p function has recently changed:
-                             It is `mapc2p(x,y,z)` rather than `mapc2p(grid,X)`.""")
         self._mapc2p = mapc2p
         self._clear_cached_values()
-
-
 
     # ========== Class Methods ===============================================
     def __init__(self,dimensions):
         r"""
         Instantiate a Grid object
-        
+
         See :class:`Grid` for more info.
         """
-        
+
         # ========== Attribute Definitions ===================================
         r"""(func) - Coordinate mapping function"""
         self.gauges = []
@@ -248,7 +248,7 @@ class Grid(object):
         super(Grid,self).__init__()
 
         self._check_validity()
-    
+
     def _clear_cached_values(self):
         self._p_centers = None
         self._p_nodes = None
@@ -259,30 +259,29 @@ class Grid(object):
     def add_dimension(self,dimension):
         r"""
         Add the specified dimension to this patch
-        
+
         :Input:
          - *dimension* - (:class:`Dimension`) Dimension to be added
         """
 
         # Add dimension to name list and as an attribute
         if dimension.name in self._dimensions:
-            raise Exception('Unable to add dimension. A dimension'\
-             +' of the same name: {name}, already exists.'\
-             .format(name=dimension.name))
+            raise Exception('Unable to add dimension. A dimension'+
+                            ' of the same name: {name}, already exists.'
+                            .format(name=dimension.name))
 
         self._dimensions.append(dimension.name)
         setattr(self,dimension.name,dimension)
         self._clear_cached_values()
         # Reset mapping as it presumably makes no sense now
         self.mapc2p = identity_map[str(self.num_dim)]
-        
-        
+
     def get_dim_attribute(self,attr):
         r"""
         Returns a tuple of all dimensions' attribute attr
         """
         return [getattr(dim,attr) for dim in self.dimensions]
-    
+
     def __copy__(self):
         return self.__class__(self)
 
@@ -295,18 +294,17 @@ class Grid(object):
         else:
             output += "Mapping function: "+self.mapc2p.__name__+"\n"
             output += "Computational domain: "
-        output += " x ".join(["[{:.2}, {:.2}]".format(dim.lower, dim.upper) \
+        output += " x ".join(["[{:.2}, {:.2}]".format(dim.lower, dim.upper)
                                             for dim in self.dimensions])
         output += "\n"
         output += "Cells:  "
         output += " x ".join(["{}".format(dim.num_cells) for dim in self.dimensions])
         return output
 
-
     # ========== Coordinates =============================================
     def _compute_c_centers(self, recompute=False):
         r"""Calculate the coordinates of the centers in the computational domain.
-        
+
         :Input:
          - *recompute* - (bool) Whether to force a recompute of the arrays
         """
@@ -319,7 +317,7 @@ class Grid(object):
 
     def _compute_c_nodes(self, recompute=False):
         r"""Calculate the coordinates of the nodes in the computational domain.
-        
+
         :Input:
          - *recompute* - (bool) Whether to force a recompute of the arrays
         """
@@ -332,7 +330,7 @@ class Grid(object):
 
     def _compute_p_centers(self, recompute=False):
         r"""Calculate the coordinates of the centers in the physical domain.
-        
+
         :Input:
          - *recompute* - (bool) Whether to force a recompute of the arrays
         """
@@ -340,10 +338,10 @@ class Grid(object):
            any([c is None for c in self.get_dim_attribute('_centers')]):
             self._compute_c_centers(recompute=recompute)
             self._p_centers = self.mapc2p(*self._c_centers)
- 
+
     def _compute_p_nodes(self, recompute=False):
         r"""Calculate the coordinates of the nodes (corners) in the physical domain.
-        
+
         :Input:
          - *recompute* - (bool) Whether to force a recompute of the arrays
         """
@@ -361,12 +359,12 @@ class Grid(object):
     def p_center(self,ind):
         r"""Compute center of physical cell with index ind."""
         return self.mapc2p(*self.c_center(ind))
-      
+
     def c_centers_with_ghost(self, num_ghost):
         r"""
         Calculate the coordinates of the cell centers, including
         ghost cells, in the computational domain.
-        
+
         :Input:
          - *num_ghost* - (int) Number of ghost cell layers
         """
@@ -397,7 +395,6 @@ class Grid(object):
 
     def p_nodes_with_ghost(self,num_ghost):
         return self.mapc2p(*self.c_nodes_with_ghost(num_ghost))
-
 
     def plot(self,num_ghost=0,mapped=True,mark_nodes=False,mark_centers=False,ax=None):
         r"""Make a plot of the grid.
@@ -431,7 +428,7 @@ class Grid(object):
                 ax.plot(xe,ye,'or')
             if mark_centers:
                 ax.plot(xc,yc,'ob')
-            ax.axis('equal');
+            ax.axis('equal')
             ax.set_xlabel(self.dimensions[0].name)
             ax.set_ylabel(self.dimensions[1].name)
             return ax
@@ -442,16 +439,15 @@ class Grid(object):
         for dim in self.dimensions:
             dim._check_validity()
 
-  
 # ============================================================================
 #  Dimension Object
 # ============================================================================
 class Dimension(object):
     r"""
     Basic class representing a dimension of a Patch object
-    
+
     :Initialization:
-    
+
     Required arguments, in order:
      - *lower* - (float) Lower extent of dimension
      - *upper* - (float) Upper extent of dimension
@@ -460,7 +456,7 @@ class Dimension(object):
     Optional (keyword) arguments:
      - *name* - (string) string Name of dimension
      - *units* - (string) Type of units, used for informational purposes only
-       
+
     Output:
      - (:class:`Dimension`) - Initialized Dimension object
 
@@ -489,12 +485,11 @@ class Dimension(object):
     >>> len(x.nodes)
     101
     """
-    
+
     @property
     def delta(self):
         r"""(float) - Size of an individual, computational cell"""
         return (self.upper-self.lower) / float(self.num_cells)
-
 
     # ========== Centers and nodes ========================================
     @property
@@ -506,6 +501,7 @@ class Dimension(object):
             for i in range(0,self.num_cells+1):
                 self._nodes[i] = self.lower + i*self.delta
         return self._nodes
+
     @property
     def centers(self):
         r"""(ndarrary(:)) - Location of all cell center coordinates
@@ -515,34 +511,39 @@ class Dimension(object):
             for i in range(0,self.num_cells):
                 self._centers[i] = self.lower + (i+0.5)*self.delta
         return self._centers
-    @property 
+
+    @property
     def lower(self):
         return self._lower
+
     @lower.setter
     def lower(self,lower):
         self._lower = float(lower)
         self._centers = None  # Reset cached arrays
         self._nodes = None
         self._check_validity()
-    @property 
+
+    @property
     def upper(self):
         return self._upper
+
     @upper.setter
     def upper(self,upper):
         self._upper = float(upper)
         self._centers = None  # Reset cached arrays
         self._nodes = None
         self._check_validity()
-    @property 
+
+    @property
     def num_cells(self):
         return self._num_cells
+
     @num_cells.setter
     def num_cells(self,num_cells):
         self._num_cells = int(num_cells)
         self._centers = None  # Reset cached arrays
         self._nodes = None
         self._check_validity()
-
 
     def centers_with_ghost(self,num_ghost):
         r"""(ndarrary(:)) - Location of all cell center coordinates
@@ -560,7 +561,6 @@ class Dimension(object):
         post = np.linspace(self.upper+self.delta, self.upper+num_ghost*self.delta,num_ghost)
         return np.hstack((pre,nodes,post))
 
-    
     def __init__(self, lower, upper, num_cells, name='x',
                  on_lower_boundary=None,on_upper_boundary=None, units=None):
         r"""
@@ -604,7 +604,6 @@ class Dimension(object):
 
     def __len__(self):
         return self.num_cells
-        
 
 # ============================================================================
 #  Patch object definition
@@ -612,35 +611,41 @@ class Dimension(object):
 class Patch(object):
     """
     :Global Patch information:
-    
+
         Each patch has a value for :attr:`level` and :attr:`patch_index`.
     """
     # Global properties
     @property
-    def num_cells_global(self): 
+    def num_cells_global(self):
         r"""(list) - List of the number of cells in each dimension"""
         return self.get_dim_attribute('num_cells')
+
     @property
     def lower_global(self):
         r"""(list) - Lower coordinate extents of each dimension"""
         return self.get_dim_attribute('lower')
+
     @property
     def upper_global(self):
         r"""(list) - Upper coordinate extends of each dimension"""
         return self.get_dim_attribute('upper')
+
     @property
     def num_dim(self):
         r"""(int) - Number of dimensions"""
         return len(self._dimensions)
+
     @property
     def dimensions(self):
-        r"""(list) - List of :class:`Dimension` objects defining the 
+        r"""(list) - List of :class:`Dimension` objects defining the
                 grid's extent and resolution"""
         return [getattr(self,name) for name in self._dimensions]
+
     @property
     def delta(self):
         r"""(list) - List of computational cell widths"""
         return self.get_dim_attribute('delta')
+
     @property
     def name(self):
         r"""(list) - List of names of each dimension"""
@@ -667,48 +672,49 @@ class Patch(object):
     def add_dimension(self,dimension):
         r"""
         Add the specified dimension to this patch
-        
+
         :Input:
          - *dimension* - (:class:`Dimension`) Dimension to be added
         """
 
         # Add dimension to name list and as an attribute
         if dimension.name in self._dimensions:
-            raise Exception('Unable to add dimension. A dimension'\
-             +' of the same name: {name}, already exists.'\
-             .format(name=dimension.name))
+            raise Exception('Unable to add dimension. A dimension'+
+                            ' of the same name: {name}, already exists.'
+                            .format(name=dimension.name))
 
         self._dimensions.append(dimension.name)
         setattr(self,dimension.name,dimension)
-  
+
     def get_dim_attribute(self,attr):
         r"""
         Returns a tuple of all dimensions' attribute attr
         """
         return [getattr(getattr(self,name),attr) for name in self._dimensions]
+
     def __deepcopy__(self,memo={}):
         import copy
         result = self.__class__(copy.deepcopy(self.dimensions))
         result.__init__(copy.deepcopy(self.dimensions))
         result.grid.mapc2p = self.grid.mapc2p
-        
+
         for attr in ('level','patch_index'):
             setattr(result,attr,copy.deepcopy(getattr(self,attr)))
-        
+
         return result
-        
+
     def __str__(self):
         output = "Patch %s:\n" % self.patch_index
         output += '\n'.join((str(getattr(self,dim)) for dim in self._dimensions))
         return output
-    
+
 # ============================================================================
 #  Domain object definition
 # ============================================================================
 class Domain(object):
     r"""
     A Domain is a list of Patches.
-    
+
     A Domain may be initialized in the following ways:
 
         1. Using 3 arguments, which are in order
@@ -733,15 +739,17 @@ class Domain(object):
     def num_dim(self):
         r"""(int) - :attr:`Patch.num_dim` of base patch"""
         return self._get_base_patch_attribute('num_dim')
+
     @property
     def patch(self):
         r"""(:class:`Patch`) - First patch is returned"""
         return self.patches[0]
+
     @property
     def grid(self):
         r"""(list) - :attr:`Patch.grid` of base patch"""
         return self._get_base_patch_attribute('grid')
- 
+
     def __init__(self,*arg):
         if len(arg)>1:
             lower = arg[0]
@@ -765,12 +773,11 @@ class Domain(object):
     def _get_base_patch_attribute(self, name):
         r"""
         Return base patch attribute name
-        
+
         :Output:
          - (id) - Value of attribute from ``self.patches[0]``
         """
         return getattr(self.patches[0],name)
- 
 
     def __deepcopy__(self,memo={}):
         import copy
@@ -778,6 +785,7 @@ class Domain(object):
         result.__init__(copy.deepcopy(self.patches))
 
         return result
+
 
 if __name__ == "__main__":
     import doctest

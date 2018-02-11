@@ -2,7 +2,6 @@ r"""
 griddle.plot: plotting time-series data on multi-patch structured mapped grids.
 """
 import matplotlib.pyplot as plt
-from clawpack import pyclaw
 import os
 import numpy as np
 import griddle
@@ -44,7 +43,7 @@ def plot_frame(plot_spec,frame_num=0):
         _set_axis_title(plot_item,frame_num)
         plot_item['axes'].figure.set_tight_layout(True)
 
-        if plot_item['plot_type'] in ['pcolor'] and not plot_item.has_key('colorbar'):
+        if (plot_item['plot_type'] in ['pcolor']) and not ('colorbar' in plot_item):
             plot_item['colorbar'] = plot_item['axes'].figure.colorbar(plot_objects[0])
 
         all_plot_objects.append(plot_objects)
@@ -73,7 +72,7 @@ def plot_item_frame(plot_item,frame_num):
     if 'yt' in plot_type:
         # For yt plots, convert to yt.dataset
         ds = _solution_to_yt_ds(gridded_data)
-        if plot_objects is None: # yt plots are always a single object
+        if plot_objects is None:  # yt plots are always a single object
             plot_objects = [None]
     else:
         # For matplotlib plots, replace plot objects instead of updating in-place
@@ -86,8 +85,8 @@ def plot_item_frame(plot_item,frame_num):
         import yt
         if plot_objects[0] is None:
             slice_plot = yt.SlicePlot(ds, fields=field, **plot_args)
-            slice_plot.set_log(field,False);
-            #return [slice_plot.plots.values()[0]]
+            slice_plot.set_log(field,False)
+            # return [slice_plot.plots.values()[0]]
             return [slice_plot]
         else:
             # If the plot object already exists, just change the data source
@@ -123,9 +122,9 @@ def plot_item_frame(plot_item,frame_num):
             plot_objects[i] = axes.fill_between(xc,q[0],q[1],**plot_args)
         elif plot_type == 'pcolor':
             xe, ye = state.grid.p_nodes
-            plot_objects[i] = axes.pcolormesh(xe, ye, q, vmin=zmin, \
-                                              vmax=zmax, shading='flat', \
-                                              zorder=state.patch.level, \
+            plot_objects[i] = axes.pcolormesh(xe, ye, q, vmin=zmin,
+                                              vmax=zmax, shading='flat',
+                                              zorder=state.patch.level,
                                               **plot_args)
             if plot_item.get('show_patch_boundaries'):
                 axes.plot(xe[0, :],ye[0, :],'-k',lw=2,zorder=100)
@@ -164,16 +163,17 @@ def write_plots(plot_spec,path='./_plots/',file_format='png'):
             figure.savefig(path+subdir+filename)
 
 
-def _set_up_time_series(plot_item):
+def _set_up_time_series(plot_item,refresh=True):
     r"""Take a plot_item and set the 'frames' key based on either
         'data' or 'data_path'.
     """
-    if not plot_item.get('frames'):
+    if refresh or not plot_item.get('frames'):
         if plot_item.get('data'):
             plot_item['frames'] = griddle.data.TimeSeries(plot_item['data'])
         else:
-            plot_item['frames'] = griddle.data.TimeSeries(plot_item['data_path'],\
-                             file_format=plot_item.get('data_format'))
+            plot_item['frames'] = \
+                griddle.data.TimeSeries(plot_item['data_path'],
+                                        file_format=plot_item.get('data_format'))
 
 
 def _get_figure_items(plot_spec,figure):
@@ -244,7 +244,7 @@ def make_plot_gallery(plot_path='./_plots'):
                          ('Clawpack', 'http://clawpack.github.io')]
     gal = Gallery(settings)
     gal.build()
-    print 'Open your browser to ./_build/index.html'
+    print('Open your browser to ./_build/index.html')
 
 
 def _get_field_values_on_all_patches(state,field):
@@ -280,7 +280,7 @@ def _get_figures(plot_object_list_list):
     figures_with_dupes = []
     for plot_object_list in plot_object_list_list:
         figures_with_dupes.extend([plot_object.figure for plot_object in plot_object_list])
-    figures = list(set(figures_with_dupes)) # Discard duplicates
+    figures = list(set(figures_with_dupes))  # Discard duplicates
     return figures
 
 
@@ -291,22 +291,22 @@ def _valid_plot_item(plot_item):
     """
     if not type(plot_item) is dict:
         raise Exception('Each plot_spec entry should be a dictionary.')
-    if not plot_item.has_key('data_path'):
-        if not plot_item.has_key('data'):
+    if 'data_path' not in plot_item:
+        if 'data' not in plot_item:
             raise Exception('For each plot_item, you must specify either \
                              "data" or "data path".')
         if not hasattr(plot_item['data'],'__getitem__'):
             raise Exception('Data source should be a list or relative path string.')
-    if not plot_item.has_key('field'):
+    if 'field' not in plot_item:
         raise Exception('A field must be specified for each plot_item.')
-    if not plot_item.has_key('plot_type'):
+    if 'plot_type' not in plot_item:
         raise Exception('A plot_type must be specified for each plot_item.')
     return True
 
 def _set_plot_item_defaults(plot_item):
     r"""Choose reasonable defaults for required options that are not specified.
     """
-    if not plot_item.has_key('plot_type'):
+    if 'plot_type' not in plot_item:
         num_dim = plot_item['frames'][0].state.num_dim
         if num_dim == 1:
             plot_item['plot_type'] = 'line'
@@ -318,9 +318,9 @@ def _set_plot_item_defaults(plot_item):
     # Fill in default values of None to avoid KeyErrors later
     for attr in ['plot_objects','axes']:
         plot_item[attr] = plot_item.get(attr)
-    if not plot_item.has_key('plot_args'):
+    if 'plot_args' not in plot_item:
         plot_item['plot_args'] = {}
-    if not plot_item.has_key('axis_settings'):
+    if 'axis_settings' not in plot_item:
         plot_item['axis_settings'] = {}
 
 
@@ -329,14 +329,14 @@ def _clear_item_axes(plot_item):
         if plot_item['axes'] is not None:
             plot_item['axes'].cla()
         # The code below doesn't work correctly:
-        #if plot_item['plot_objects'] is not None:
+        # if plot_item['plot_objects'] is not None:
         #    for plot_object in plot_item['plot_objects']:
         #        plot_object.remove()
         #        del plot_object
 
 
 def _set_axis_title(plot_item,frame_num):
-    if plot_item.has_key('name'):
+    if 'name' in plot_item:
         title = '%s at t = %s' % (str(plot_item['name']),plot_item['frames'][frame_num].t)
     else:
         title = 'Field %s at t = %s' % (str(plot_item['field']),plot_item['frames'][frame_num].t)
@@ -347,7 +347,7 @@ def _solution_to_yt_ds(sol):
     import yt
     grid_data = []
 
-    for state in sorted(sol.states, key = lambda a: a.patch.level):
+    for state in sorted(sol.states, key=lambda a: a.patch.level):
         patch = state.patch
 
         d = {
@@ -356,11 +356,11 @@ def _solution_to_yt_ds(sol):
             'level': patch.level,
             'dimensions': patch.num_cells_global,
             'Density': state.q[0,...],
-            'x-momentum' : state.q[1,:,:,:],
-            'y-momentum' : state.q[2,:,:,:],
-            'z-momentum' : state.q[3,:,:,:],
-            'Energy'     : state.q[4,:,:,:]
-            }
+            'x-momentum': state.q[1,:,:,:],
+            'y-momentum': state.q[2,:,:,:],
+            'z-momentum': state.q[3,:,:,:],
+            'Energy': state.q[4,:,:,:]
+        }
         grid_data.append(d)
-        bbox = np.vstack((sol.patch.lower_global,sol.patch.upper_global)).T;
-    return yt.load_amr_grids(grid_data, sol.patch.num_cells_global, bbox = bbox)
+        bbox = np.vstack((sol.patch.lower_global,sol.patch.upper_global)).T
+    return yt.load_amr_grids(grid_data, sol.patch.num_cells_global, bbox=bbox)
