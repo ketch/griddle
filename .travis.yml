@@ -2,6 +2,13 @@ language: python
 python:
   - "3.6"
 
+addons:
+  artifacts: 
+    s3_region: "us-east-2"
+    debug: true
+    paths:
+      - ./result_images
+
 before_install:
   - pip install coverage
   - pip install python-coveralls
