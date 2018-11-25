@@ -5,9 +5,12 @@ python:
 before_install:
   - pip install coverage
   - pip install python-coveralls
-    #- pip install -U Cython
-  - pip install numpy
-  - pip install matplotlib
+  - pip install pytest
+  - pip install pytest-cov
+  - pip install pytest-mpl
+  - pip install -U numpy
+  - python -c "import numpy; print(numpy.version.version)"
+  - pip install -U matplotlib
   - pip install yt
   - pip install sigal
   - sudo apt-get update -qq
@@ -20,7 +23,7 @@ install:
 
 script:
   - cd $HOME/build/ketch/griddle
-  - python tests.py -v --with-coverage --cover-package=griddle --with-doctest;
+  - py.test --cov=griddle --doctest-modules --mpl --ignore=clawpack
 
 after_success:
   - coveralls

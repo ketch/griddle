@@ -3,7 +3,7 @@ import griddle
 import matplotlib.pyplot as plt
 from clawpack import pyclaw
 import numpy as np
-from matplotlib.testing.decorators import image_comparison
+import pytest
 from nose import SkipTest
 
 
@@ -54,21 +54,23 @@ def set_up_mapped_grid():
 
 # ===================================
 # Test functions
-@image_comparison(baseline_images=['grid'],extensions=['png'])
+@pytest.mark.mpl_image_compare
 def test_plot_grid():
     fig = plt.figure()
     ax = fig.add_subplot(111)
     grid = set_up_grid()
-    grid.plot(num_ghost=1, ax=ax, mark_nodes=True, mark_centers=True);
+    grid.plot(num_ghost=1, ax=ax, mark_nodes=True, mark_centers=True)
+    return fig
 
-@image_comparison(baseline_images=['mapped_grid'],extensions=['png'])
+@pytest.mark.mpl_image_compare
 def test_plot_mapped_grid():
     fig = plt.figure()
     ax = fig.add_subplot(111)
     grid = set_up_mapped_grid()
-    grid.plot(num_ghost=1,ax=ax);
+    grid.plot(num_ghost=1,ax=ax)
+    return fig
 
-@image_comparison(baseline_images=['item'],extensions=['png'])
+@pytest.mark.mpl_image_compare
 def test_plot_item():
     fig  = plt.figure(figsize=(8,6),dpi=100)
     ax   = fig.add_subplot(111)
@@ -80,6 +82,7 @@ def test_plot_item():
     line, = griddle.plot_item_frame(item,0)
     assert type(line) == matplotlib.lines.Line2D
     assert line.get_data()[0].shape == (100,)
+    return fig
 
 def test_animation():
     claw = run_pyclaw_1d()
@@ -118,7 +121,7 @@ def test_gallery():
     griddle.write_plots(plot_spec)
     griddle.make_plot_gallery()
 
-@image_comparison(baseline_images=['pcolor'],extensions=['png'])
+@pytest.mark.mpl_image_compare
 def test_pcolor():
     claw = run_pyclaw_2d()
     fig = plt.figure()
@@ -128,8 +131,9 @@ def test_pcolor():
                   'field': 0}]
     plot_object = griddle.plot_frame(plot_spec)
     assert type(plot_object[0][0]) is matplotlib.collections.QuadMesh
+    return fig
 
-@image_comparison(baseline_images=['sill'],extensions=['png'])
+@pytest.mark.mpl_image_compare
 def test_fill_between():
     r"""Also tests derived quantities."""
     def bathymetry(state):
@@ -161,11 +165,12 @@ def test_fill_between():
              'plot_args': {'color': 'brown',
                             'edgecolor': 'k'}}
     griddle.animate([water,land])
+    return fig
 
 def test_read_data():
     pass
 
-@image_comparison(baseline_images=['amr'],extensions=['pdf'])
+@pytest.mark.mpl_image_compare
 def test_amr_plotting():
     fig = plt.figure(figsize=(10,10))
     ax = fig.add_subplot(111)
@@ -177,6 +182,7 @@ def test_amr_plotting():
     plot_objects = griddle.plot_frame(plot_spec,frame_num=5);
     assert len(plot_objects[0]) == 20
     assert type(plot_objects[0][0]) is matplotlib.collections.QuadMesh
+    return fig
 
 def test_yt_slice_plot():
     try:
