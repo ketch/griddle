@@ -41,7 +41,6 @@ def plot_frame(plot_spec,frame_num=0):
 
         plot_item['axes'].set(**plot_item['axis_settings'])
         _set_axis_title(plot_item,frame_num)
-        plot_item['axes'].figure.set_tight_layout(True)
 
         if (plot_item['plot_type'] in ['pcolor']) and not ('colorbar' in plot_item):
             plot_item['colorbar'] = plot_item['axes'].figure.colorbar(plot_objects[0])
@@ -220,7 +219,8 @@ def animate(plot_spec):
         plot_objects = plot_frame(plot_spec,frame_number)
         return plot_objects[0]
 
-    return animation.FuncAnimation(fig, fplot, frames=len(plot_spec[0]['frames'].list_frames))
+    return animation.FuncAnimation(fig, fplot, frames=len(plot_spec[0]['frames'].list_frames),
+                                   repeat=False)
 
 
 def make_plot_gallery(plot_path='./_plots'):
@@ -325,14 +325,14 @@ def _set_plot_item_defaults(plot_item):
 
 
 def _clear_item_axes(plot_item):
-        # Clear old items from plot axes
-        if plot_item['axes'] is not None:
-            plot_item['axes'].cla()
-        # The code below doesn't work correctly:
-        # if plot_item['plot_objects'] is not None:
-        #    for plot_object in plot_item['plot_objects']:
-        #        plot_object.remove()
-        #        del plot_object
+    # Clear old items from plot axes
+    if plot_item['axes'] is not None:
+        plot_item['axes'].cla()
+    # The code below doesn't work correctly:
+    # if plot_item['plot_objects'] is not None:
+    #    for plot_object in plot_item['plot_objects']:
+    #        plot_object.remove()
+    #        del plot_object
 
 
 def _set_axis_title(plot_item,frame_num):
@@ -364,3 +364,65 @@ def _solution_to_yt_ds(sol):
         grid_data.append(d)
         bbox = np.vstack((sol.patch.lower_global,sol.patch.upper_global)).T
     return yt.load_amr_grids(grid_data, sol.patch.num_cells_global, bbox=bbox)
+
+def widget_compare(link_frames=True):
+    from ipywidgets import interact, Dropdown, widgets
+    import traitlets
+    import os
+
+    # Find all subdirectories with Clawpack output
+    data_dirs = [None]
+    for path, subdirList, file_list in os.walk('.'):
+        if 'fort.q0000' in file_list or 'claw0000.hdf' in file_list:
+            data_dirs.append(path)
+
+    datapath_w = widgets.Dropdown(options=data_dirs)
+    frame_w = widgets.IntSlider(description='Frame', continuous_update=False)
+    field_w = widgets.IntSlider(description='Field', continuous_update=False)
+    args_w = widgets.Textarea(description='plot args')
+
+    datapath_w2 = widgets.Dropdown(options=data_dirs)
+    frame_w2 = widgets.IntSlider(description='Frame', continuous_update=False)
+    field_w2 = widgets.IntSlider(description='Field', continuous_update=False)
+
+
+    def update_frame_range(value):
+        data_path = value['new']
+        ts = griddle.data.TimeSeries(data_path)
+        num_fields = ts[0].q.shape[0] - 1
+        num_frames = len(ts.list_frames) - 1
+        frame_w.max = num_frames
+        field_w.max = num_fields
+
+    def update_frame_range2(value):
+        data_path = value['new']
+        ts = griddle.data.TimeSeries(data_path)
+        num_fields = ts[0].q.shape[0] - 1
+        num_frames = len(ts.list_frames) - 1
+        frame_w2.max = num_frames
+        field_w2.max = num_fields
+
+    datapath_w.observe(update_frame_range, names='value')
+    datapath_w2.observe(update_frame_range2, names='value')
+
+    if link_frames:
+        _ = traitlets.link((frame_w, 'value'), (frame_w2, 'value'))
+
+    def wplot(data_path=Dropdown(options=list(data_dirs)), field=0, plot_args={}, frame=0):
+        plot_spec = [{'data_path' : data_path,
+                  'field' : field,
+                  'plot_args' : {}}]
+        try:
+            ts = griddle.data.TimeSeries(data_path)
+            num_frames = len(ts.list_frames)
+            griddle.plot_frame(plot_spec, frame_num=frame)
+        except:
+            pass
+
+    plot_gui = widgets.HBox([widgets.VBox([datapath_w, frame_w, field_w, args_w]),
+                             widgets.VBox([datapath_w2, frame_w2, field_w2])])
+    plotwidget = widgets.HBox([widgets.interactive_output(wplot,{'data_path':datapath_w,'field':field_w,
+                                            'frame':frame_w, 'plot_args':args_w}),
+                               widgets.interactive_output(wplot,{'data_path':datapath_w2,'field':field_w2,
+                                            'frame':frame_w2})])
+    display(plot_gui,plotwidget)
