@@ -200,7 +200,7 @@ def animate(plot_spec):
         - a controller possessing a list of Solution objects
     """
     from matplotlib import animation
-    from clawpack.visclaw.JSAnimation import IPython_display
+    from IPython.display import HTML
 
     # Sanitize items and prepare for plotting
     # This should happen somewhere else
@@ -220,7 +220,9 @@ def animate(plot_spec):
         plot_objects = plot_frame(plot_spec,frame_number)
         return plot_objects[0]
 
-    return animation.FuncAnimation(fig, fplot, frames=len(plot_spec[0]['frames'].list_frames))
+    anim = animation.FuncAnimation(fig, fplot, frames=len(plot_spec[0]['frames'].list_frames))
+    plt.close()
+    return HTML(anim.to_jshtml())
 
 
 def make_plot_gallery(plot_path='./_plots'):
